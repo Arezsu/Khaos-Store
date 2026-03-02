@@ -4,18 +4,20 @@ from django.core.mail import send_mail
 from django.conf import settings
 import random
 import string
+from django.core.validators import MinLengthValidator, RegexValidator, MinValueValidator, MaxValueValidator
+from datetime import date
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
-    price = models.FloatField()
+    price = models.FloatField(validators=[MinValueValidator(0)])
     image = models.ImageField(upload_to='products/')
     description = models.TextField()
     is_on_sale = models.BooleanField(default=False)
-    sale_price = models.FloatField(null=True, blank=True)
-    stock = models.IntegerField(default=10)
+    sale_price = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0)])
+    stock = models.IntegerField(default=10, validators=[MinValueValidator(0)])
     category = models.CharField(max_length=100, default='Acción')
-    rating = models.FloatField(default=5.0)
-    reviews_count = models.IntegerField(default=0)
+    rating = models.FloatField(default=5.0, validators=[MinValueValidator(0), MaxValueValidator(5)])
+    reviews_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -26,13 +28,25 @@ class Product(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=20, blank=True)
+    phone = models.CharField(
+        max_length=10, 
+        blank=True, 
+        validators=[MinLengthValidator(10), RegexValidator(r'^\d{10}$', 'El teléfono debe tener exactamente 10 dígitos')]
+    )
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
     favorite_games = models.ManyToManyField(Product, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     
     def __str__(self):
         return self.user.username
+    
+    def is_adult(self):
+        if not self.birth_date:
+            return False
+        today = date.today()
+        age = today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+        return age >= 18
 
 class Order(models.Model):
     PAYMENT_METHODS = [
@@ -54,11 +68,11 @@ class Order(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     customer_name = models.CharField(max_length=200)
     customer_email = models.EmailField()
-    customer_phone = models.CharField(max_length=20)
+    customer_phone = models.CharField(max_length=10, validators=[MinLengthValidator(10), RegexValidator(r'^\d{10}$')])
     address = models.TextField()
     city = models.CharField(max_length=100)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS)
-    total = models.FloatField()
+    total = models.FloatField(validators=[MinValueValidator(0)])
     status = models.CharField(max_length=20, choices=STATUS, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -94,11 +108,12 @@ class Order(models.Model):
                 message,
                 settings.DEFAULT_FROM_EMAIL,
                 [self.customer_email],
-                fail_silently=True,
+                fail_silently=False,
             )
+            print(f"✅ Email de confirmación enviado a {self.customer_email}")
             return True
         except Exception as e:
-            print(f"Error enviando confirmación: {e}")
+            print(f"❌ Error enviando confirmación: {e}")
             return False
     
     def send_game_key(self):
@@ -129,11 +144,12 @@ class Order(models.Model):
                 message,
                 settings.DEFAULT_FROM_EMAIL,
                 [self.customer_email],
-                fail_silently=True,
+                fail_silently=False,
             )
+            print(f"✅ Email de key enviado a {self.customer_email}")
             return True
         except Exception as e:
-            print(f"Error enviando key: {e}")
+            print(f"❌ Error enviando key: {e}")
             return False
     
     def __str__(self):
