@@ -46,6 +46,7 @@ class Order(models.Model):
         ('PAID', 'Pagado'),
         ('SENT', 'Enviado'),
         ('DELIVERED', 'Entregado'),
+        ('CANCELLED', 'Cancelado'),
     ]
     
     order_number = models.CharField(max_length=20, unique=True)
@@ -70,59 +71,70 @@ class Order(models.Model):
         return 'KHAOS-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     
     def send_confirmation_email(self):
-        subject = f'🎮 Confirmación de compra - KHAOS STORE #{self.order_number}'
-        message = f"""
-        ¡Gracias por tu compra en KHAOS STORE!
-        
-        Datos de la compra:
-        • Número de orden: {self.order_number}
-        • Producto: {self.product.name}
-        • Total: ${self.total}
-        • Método de pago: {self.get_payment_method_display()}
-        
-        En los próximos segundos recibirás un correo con las instrucciones para descargar tu juego.
-        
-        Si tienes alguna duda, contáctanos en soporte@khaosstore.com
-        
-        ¡A jugar!
-        KHAOS STORE
-        """
-        send_mail(
-            subject,
-            message,
-            settings.EMAIL_HOST_USER,
-            [self.customer_email],
-            fail_silently=False,
-        )
+        try:
+            subject = f'🎮 Confirmación de compra - KHAOS STORE #{self.order_number}'
+            message = f"""
+            ¡Gracias por tu compra en KHAOS STORE!
+            
+            Datos de la compra:
+            • Número de orden: {self.order_number}
+            • Producto: {self.product.name}
+            • Total: ${self.total}
+            • Método de pago: {self.get_payment_method_display()}
+            
+            En los próximos segundos recibirás un correo con las instrucciones para descargar tu juego.
+            
+            Si tienes alguna duda, contáctanos al 333 7452514 o a soporte@khaosstore.com
+            
+            ¡A jugar!
+            KHAOS STORE
+            """
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [self.customer_email],
+                fail_silently=False,
+            )
+            return True
+        except Exception as e:
+            print(f"Error enviando confirmación: {e}")
+            return False
     
     def send_game_key(self):
-        # Simular envío de key del juego
-        game_key = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
-        subject = f'🔑 Tu juego {self.product.name} ya está listo - KHAOS STORE'
-        message = f"""
-        ¡Hola {self.customer_name}!
-        
-        Tu juego {self.product.name} ya está disponible.
-        
-        Tu clave de activación: {game_key}
-        
-        Instrucciones de activación:
-        1. Abre la plataforma correspondiente
-        2. Ve a "Canjear código"
-        3. Ingresa: {game_key}
-        4. ¡Disfruta tu juego!
-        
-        Tu clave también está disponible en tu perfil.
-        
-        KHAOS STORE
-        """
-        send_mail(
-            subject,
-            message,
-            settings.EMAIL_HOST_USER,
-            [self.customer_email],
-            fail_silently=False,
-        )
+        try:
+            game_key = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+            subject = f'🔑 Tu juego {self.product.name} ya está listo - KHAOS STORE'
+            message = f"""
+            ¡Hola {self.customer_name}!
+            
+            Tu juego {self.product.name} ya está disponible.
+            
+            Tu clave de activación: {game_key}
+            
+            Instrucciones de activación:
+            1. Abre la plataforma correspondiente
+            2. Ve a "Canjear código"
+            3. Ingresa: {game_key}
+            4. ¡Disfruta tu juego!
+            
+            ¿Problemas? Contáctanos al 333 7452514
+            
+            Tu clave también está disponible en tu perfil.
+            
+            KHAOS STORE
+            """
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [self.customer_email],
+                fail_silently=False,
+            )
+            return True
+        except Exception as e:
+            print(f"Error enviando key: {e}")
+            return False
     
     def __str__(self):
         return f"Order #{self.order_number}"

@@ -29,66 +29,85 @@ def register(request):
             messages.error(request, 'El email ya está registrado')
             return redirect('register')
         
-        # Crear usuario
         user = User.objects.create_user(
             username=username,
             email=email,
             password=password
         )
         
-        # Crear perfil
         UserProfile.objects.create(
             user=user,
             phone=phone
         )
         
-        # Iniciar sesión automáticamente
         login(request, user)
         messages.success(request, '¡Registro exitoso! Bienvenido a KHAOS STORE')
+        
+        # Redirigir al checkout si venía de ahí
+        next_url = request.POST.get('next') or request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
         return redirect('home')
     
     return render(request, 'store/register.html')
 
+@login_required(login_url='login')
 def checkout(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'store/checkout.html', {'product': product})
 
+@login_required(login_url='login')
 def process_payment(request, product_id):
     if request.method == 'POST':
-        product = get_object_or_404(Product, id=product_id)
-        
-        # Crear la orden
-        order = Order.objects.create(
-            product=product,
-            customer_name=request.POST['name'],
-            customer_email=request.POST['email'],
-            customer_phone=request.POST['phone'],
-            address=request.POST['address'],
-            city=request.POST['city'],
-            payment_method=request.POST['payment_method'],
-            total=product.get_price(),
-            user=request.user if request.user.is_authenticated else None
-        )
-        
-        # Enviar correo de confirmación
-        order.send_confirmation_email()
-        
-        # Enviar key del juego (simulado)
-        order.send_game_key()
-        
-        # Guardar en sesión
-        request.session['last_order'] = order.order_number
-        
-        messages.success(request, '¡Pago exitoso! Revisa tu correo para la key del juego')
-        return redirect('success', order_id=order.order_number)
+        try:
+            print(f"🔍 Procesando pago para producto ID: {product_id}")
+            
+            product = get_object_or_404(Product, id=product_id)
+            print(f"✅ Producto encontrado: {product.name}")
+            
+            if product.stock <= 0:
+                messages.error(request, 'Producto agotado')
+                return redirect('home')
+            
+            order = Order.objects.create(
+                product=product,
+                customer_name=request.POST.get('name', ''),
+                customer_email=request.POST.get('email', ''),
+                customer_phone=request.POST.get('phone', ''),
+                address=request.POST.get('address', ''),
+                city=request.POST.get('city', ''),
+                payment_method=request.POST.get('payment_method', 'CARD'),
+                total=product.get_price(),
+                user=request.user,
+                status='PAID'
+            )
+            print(f"✅ Orden creada: {order.order_number}")
+            
+            product.stock -= 1
+            product.save()
+            
+            try:
+                order.send_confirmation_email()
+                order.send_game_key()
+                print("✅ Emails enviados")
+            except Exception as e:
+                print(f"⚠️ Error en emails: {e}")
+            
+            request.session['last_order'] = order.order_number
+            messages.success(request, '¡Pago exitoso! Revisa tu correo para la key del juego')
+            return redirect('success', order_id=order.order_number)
+            
+        except Exception as e:
+            print(f"❌ ERROR GRAVE: {e}")
+            messages.error(request, f'Error al procesar el pago. Intenta de nuevo.')
+            return redirect('home')
     
     return redirect('home')
 
 def success(request, order_id):
     return render(request, 'store/success.html', {'order_id': order_id})
 
-
-@login_required(login_url='login')  # <--- AGREGÁ ESTO
+@login_required(login_url='login')
 def profile(request):
     user_profile = UserProfile.objects.get_or_create(user=request.user)[0]
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
