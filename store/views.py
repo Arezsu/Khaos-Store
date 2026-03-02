@@ -3,7 +3,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponse
 from .models import Product, Order, UserProfile
+import traceback
 
 def home(request):
     products = Product.objects.all()
@@ -43,7 +45,6 @@ def register(request):
         login(request, user)
         messages.success(request, '¡Registro exitoso! Bienvenido a KHAOS STORE')
         
-        # Redirigir al checkout si venía de ahí
         next_url = request.POST.get('next') or request.GET.get('next')
         if next_url:
             return redirect(next_url)
@@ -58,51 +59,81 @@ def checkout(request, product_id):
 
 @login_required(login_url='login')
 def process_payment(request, product_id):
-    if request.method == 'POST':
-        try:
-            print(f"🔍 Procesando pago para producto ID: {product_id}")
-            
-            product = get_object_or_404(Product, id=product_id)
-            print(f"✅ Producto encontrado: {product.name}")
-            
-            if product.stock <= 0:
-                messages.error(request, 'Producto agotado')
-                return redirect('home')
-            
-            order = Order.objects.create(
-                product=product,
-                customer_name=request.POST.get('name', ''),
-                customer_email=request.POST.get('email', ''),
-                customer_phone=request.POST.get('phone', ''),
-                address=request.POST.get('address', ''),
-                city=request.POST.get('city', ''),
-                payment_method=request.POST.get('payment_method', 'CARD'),
-                total=product.get_price(),
-                user=request.user,
-                status='PAID'
-            )
-            print(f"✅ Orden creada: {order.order_number}")
-            
-            product.stock -= 1
-            product.save()
-            
-            try:
-                order.send_confirmation_email()
-                order.send_game_key()
-                print("✅ Emails enviados")
-            except Exception as e:
-                print(f"⚠️ Error en emails: {e}")
-            
-            request.session['last_order'] = order.order_number
-            messages.success(request, '¡Pago exitoso! Revisa tu correo para la key del juego')
-            return redirect('success', order_id=order.order_number)
-            
-        except Exception as e:
-            print(f"❌ ERROR GRAVE: {e}")
-            messages.error(request, f'Error al procesar el pago. Intenta de nuevo.')
-            return redirect('home')
+    # Si no es POST, redirigir
+    if request.method != 'POST':
+        return redirect('home')
     
-    return redirect('home')
+    try:
+        print("=" * 50)
+        print(f"🔍 INICIANDO PROCESO DE PAGO para producto ID: {product_id}")
+        print(f"Usuario: {request.user.username}")
+        print(f"Datos POST: {request.POST}")
+        
+        # Obtener el producto
+        product = get_object_or_404(Product, id=product_id)
+        print(f"✅ Producto encontrado: {product.name} - Stock: {product.stock}")
+        
+        # Verificar stock
+        if product.stock <= 0:
+            messages.error(request, 'Producto agotado')
+            return redirect('home')
+        
+        # Validar datos del formulario
+        required_fields = ['name', 'email', 'phone', 'address', 'city']
+        for field in required_fields:
+            if not request.POST.get(field):
+                messages.error(request, f'El campo {field} es obligatorio')
+                return redirect('checkout', product_id=product.id)
+        
+        # Crear la orden
+        print("📝 Creando orden...")
+        order = Order.objects.create(
+            product=product,
+            customer_name=request.POST.get('name', ''),
+            customer_email=request.POST.get('email', ''),
+            customer_phone=request.POST.get('phone', ''),
+            address=request.POST.get('address', ''),
+            city=request.POST.get('city', ''),
+            payment_method=request.POST.get('payment_method', 'CARD'),
+            total=product.get_price(),
+            user=request.user,
+            status='PAID'
+        )
+        print(f"✅ Orden creada: {order.order_number}")
+        
+        # Restar stock
+        product.stock -= 1
+        product.save()
+        print(f"✅ Stock actualizado: {product.stock} unidades restantes")
+        
+        # Intentar enviar emails (NO CRÍTICO - si falla, la compra igual se registra)
+        try:
+            print("📧 Intentando enviar emails...")
+            order.send_confirmation_email()
+            order.send_game_key()
+            print("✅ Emails enviados correctamente")
+        except Exception as e:
+            print(f"⚠️ Error enviando emails (NO CRÍTICO): {e}")
+            # No mostramos error al usuario porque la compra fue exitosa
+        
+        # Guardar en sesión
+        request.session['last_order'] = order.order_number
+        request.session.modified = True
+        
+        print(f"✅ PAGO COMPLETADO EXITOSAMENTE - Orden: {order.order_number}")
+        print("=" * 50)
+        
+        messages.success(request, '¡Pago exitoso! Revisa tu correo para la key del juego')
+        return redirect('success', order_id=order.order_number)
+        
+    except Exception as e:
+        print("❌ ERROR CRÍTICO EN PAGO:")
+        print(str(e))
+        traceback.print_exc()
+        print("=" * 50)
+        
+        messages.error(request, 'Error al procesar el pago. Por favor intenta de nuevo.')
+        return redirect('home')
 
 def success(request, order_id):
     return render(request, 'store/success.html', {'order_id': order_id})

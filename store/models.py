@@ -82,7 +82,7 @@ class Order(models.Model):
             • Total: ${self.total}
             • Método de pago: {self.get_payment_method_display()}
             
-            En los próximos segundos recibirás un correo con las instrucciones para descargar tu juego.
+            En los próximos minutos recibirás la key de tu juego.
             
             Si tienes alguna duda, contáctanos al 333 7452514 o a soporte@khaosstore.com
             
@@ -94,7 +94,7 @@ class Order(models.Model):
                 message,
                 settings.DEFAULT_FROM_EMAIL,
                 [self.customer_email],
-                fail_silently=False,
+                fail_silently=True,
             )
             return True
         except Exception as e:
@@ -129,7 +129,7 @@ class Order(models.Model):
                 message,
                 settings.DEFAULT_FROM_EMAIL,
                 [self.customer_email],
-                fail_silently=False,
+                fail_silently=True,
             )
             return True
         except Exception as e:
