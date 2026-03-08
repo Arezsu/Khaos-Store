@@ -14,7 +14,7 @@ def home(request):
 def register(request):
     if request.method == 'POST':
         try:
-            # Obtener datos con .get() para evitar errores
+            # Obtener datos del formulario
             username = request.POST.get('username', '').strip()
             email = request.POST.get('email', '').strip()
             password = request.POST.get('password', '')
@@ -24,11 +24,14 @@ def register(request):
             birth_month = request.POST.get('birth_month')
             birth_day = request.POST.get('birth_day')
             
-            print(f"📝 Datos recibidos: {username}, {email}, {phone}")
-            
-            # Validaciones básicas
+            # Validar campos obligatorios
             if not all([username, email, password, confirm_password, phone, birth_year, birth_month, birth_day]):
                 messages.error(request, 'Todos los campos son obligatorios')
+                return redirect('register')
+            
+            # Validar longitud de contraseña (más de 3 dígitos)
+            if len(password) < 4:
+                messages.error(request, 'La contraseña debe tener al menos 4 caracteres')
                 return redirect('register')
             
             if password != confirm_password:
@@ -55,8 +58,7 @@ def register(request):
                 if age < 18:
                     messages.error(request, 'Debes ser mayor de 18 años para registrarte')
                     return redirect('register')
-            except (ValueError, TypeError) as e:
-                print(f"Error en fecha: {e}")
+            except (ValueError, TypeError):
                 messages.error(request, 'Fecha de nacimiento inválida')
                 return redirect('register')
             
@@ -66,7 +68,6 @@ def register(request):
                 email=email,
                 password=password
             )
-            print(f"✅ Usuario creado: {user.username}")
             
             # Crear perfil
             UserProfile.objects.create(
@@ -74,13 +75,14 @@ def register(request):
                 phone=phone,
                 birth_date=birth_date
             )
-            print(f"✅ Perfil creado para: {user.username}")
             
-            # Iniciar sesión
+            # INICIAR SESIÓN AUTOMÁTICAMENTE (¡AHORA SÍ!)
             login(request, user)
-            messages.success(request, '¡Registro exitoso! Bienvenido a KHAOS STORE')
             
-            # Redirigir
+            # Mensaje de éxito
+            messages.success(request, '🎉 ¡Usuario creado exitosamente! Bienvenido a KHAOS STORE')
+            
+            # Redirigir a home con usuario logueado
             next_url = request.POST.get('next') or request.GET.get('next')
             if next_url:
                 return redirect(next_url)
@@ -134,7 +136,7 @@ def process_payment(request, product_id):
             payment_method=payment_method,
             total=product.get_price(),
             user=request.user,
-            status='PAID'
+            status='PAID'  # Se crea como pagado directamente
         )
         
         product.stock -= 1
@@ -161,9 +163,20 @@ def success(request, order_id):
 
 @login_required(login_url='login')
 def profile(request):
-    user_profile = UserProfile.objects.get_or_create(user=request.user)[0]
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'store/profile.html', {
-        'profile': user_profile,
-        'orders': orders
-    })
+    try:
+        # Obtener o crear perfil automáticamente
+        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+        
+        # Obtener órdenes del usuario
+        orders = Order.objects.filter(user=request.user).order_by('-created_at')
+        
+        return render(request, 'store/profile.html', {
+            'profile': user_profile,
+            'orders': orders
+        })
+        
+    except Exception as e:
+        print(f"❌ ERROR EN PERFIL: {e}")
+        traceback.print_exc()
+        messages.error(request, 'Error al cargar el perfil. Intenta de nuevo.')
+        return redirect('home')
