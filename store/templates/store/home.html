@@ -21,7 +21,6 @@
             color: #fff;
         }
         
-        /* Header */
         .header {
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(10px);
@@ -103,14 +102,12 @@
             color: #000;
         }
         
-        /* Main content */
         .main {
             max-width: 1400px;
             margin: 2rem auto;
             padding: 0 2rem;
         }
         
-        /* Hero */
         .hero {
             text-align: center;
             padding: 4rem 2rem;
@@ -130,7 +127,6 @@
             -webkit-text-fill-color: transparent;
         }
         
-        /* Mensajes */
         .messages {
             max-width: 1400px;
             margin: 1rem auto;
@@ -156,7 +152,6 @@
             color: #ff0000;
         }
         
-        /* Grid de productos */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -225,7 +220,6 @@
             box-shadow: 0 0 30px #ff00ff;
         }
         
-        /* Footer */
         .footer {
             background: rgba(0, 0, 0, 0.9);
             border-top: 3px solid;
@@ -254,6 +248,35 @@
         .footer-section ul li {
             margin-bottom: 0.5rem;
             color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .footer-section ul li a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .footer-section ul li a:hover {
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            padding-left: 10px;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .social-links a {
+            color: #fff;
+            transition: all 0.3s;
+        }
+        
+        .social-links a:hover {
+            color: #ff00ff;
+            transform: scale(1.2) rotate(5deg);
+            text-shadow: 0 0 20px #ff00ff;
         }
         
         .copyright {
@@ -338,6 +361,19 @@
             <div class="footer-section">
                 <h3>KHAOS STORE</h3>
                 <p>La mejor tienda de videojuegos</p>
+            </div>
+            <div class="footer-section">
+                <h3>ENLACES RÁPIDOS</h3>
+                <ul>
+                    <li><a href="#">Sobre Nosotros</a></li>
+                    <li><a href="#">Términos y Condiciones</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>SÍGUENOS</h3>
+                <div class="social-links">
+                    <a href="https://www.instagram.com/khaos_storecol/" target="_blank">📷 Instagram</a>
+                </div>
             </div>
             <div class="footer-section">
                 <h3>CONTACTO</h3>

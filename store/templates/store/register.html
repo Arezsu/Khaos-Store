@@ -301,6 +301,7 @@
     </div>
     
     <script>
+        // Validar teléfono solo números y máximo 10 dígitos
         document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
         });

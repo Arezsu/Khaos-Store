@@ -12,6 +12,7 @@ def home(request):
 
 def register(request):
     if request.method == 'POST':
+        # Obtener datos del formulario
         username = request.POST.get('username')
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -21,28 +22,32 @@ def register(request):
         birth_month = request.POST.get('birth_month')
         birth_day = request.POST.get('birth_day')
         
-        # Validaciones
-        if not username or not email or not password:
+        # Validar campos obligatorios
+        if not all([username, email, password, confirm_password, phone, birth_year, birth_month, birth_day]):
             messages.error(request, 'Todos los campos son obligatorios')
             return redirect('register')
         
+        # Validar contraseñas
         if password != confirm_password:
             messages.error(request, 'Las contraseñas no coinciden')
             return redirect('register')
         
+        # Validar usuario existente
         if User.objects.filter(username=username).exists():
             messages.error(request, 'El usuario ya existe')
             return redirect('register')
         
+        # Validar email existente
         if User.objects.filter(email=email).exists():
             messages.error(request, 'El email ya está registrado')
             return redirect('register')
         
+        # Validar teléfono (10 dígitos)
         if len(phone) != 10 or not phone.isdigit():
             messages.error(request, 'El teléfono debe tener exactamente 10 dígitos')
             return redirect('register')
         
-        # Validar edad
+        # Validar edad (mayor de 18 años)
         try:
             birth_date = date(int(birth_year), int(birth_month), int(birth_day))
             today = date.today()
@@ -61,21 +66,24 @@ def register(request):
             password=password
         )
         
-        # Crear perfil
+        # Crear perfil de usuario
         UserProfile.objects.create(
             user=user,
             phone=phone,
             birth_date=birth_date
         )
         
+        # Iniciar sesión automáticamente
         login(request, user)
         messages.success(request, '¡Registro exitoso! Bienvenido a KHAOS STORE')
         
+        # Redirigir a la página anterior si existe (checkout)
         next_url = request.POST.get('next') or request.GET.get('next')
         if next_url:
             return redirect(next_url)
         return redirect('home')
     
+    # Si es GET, mostrar formulario vacío
     return render(request, 'store/register.html')
 
 @login_required(login_url='login')
