@@ -120,18 +120,30 @@
             border-radius: 5px;
             margin-bottom: 10px;
             text-align: center;
+            animation: slideIn 0.5s ease;
         }
         
-        .message.error {
-            background: rgba(255, 0, 0, 0.2);
-            border: 1px solid #ff0000;
-            color: #ff0000;
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
         
         .message.success {
             background: rgba(0, 255, 0, 0.2);
             border: 1px solid #00ff00;
             color: #00ff00;
+        }
+        
+        .message.error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            color: #ff0000;
         }
         
         .info-message {
@@ -164,6 +176,35 @@
         .back-link:hover {
             color: #ff00ff;
         }
+        
+        .password-strength {
+            margin-top: 5px;
+            height: 5px;
+            background: rgba(255, 0, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+        }
+        
+        .strength-weak {
+            background: #ff0000;
+            width: 33%;
+        }
+        
+        .strength-medium {
+            background: #ffff00;
+            width: 66%;
+        }
+        
+        .strength-strong {
+            background: #00ff00;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -184,7 +225,7 @@
         </div>
         {% endif %}
         
-        <form method="post" action="">
+        <form method="post" action="" id="registerForm">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">
             
@@ -281,16 +322,20 @@
             </div>
             
             <div class="form-group">
-                <label>CONTRASEÑA</label>
-                <input type="password" name="password" required>
+                <label>CONTRASEÑA (mínimo 4 caracteres)</label>
+                <input type="password" name="password" id="password" required minlength="4">
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="strengthBar"></div>
+                </div>
             </div>
             
             <div class="form-group">
                 <label>CONFIRMAR CONTRASEÑA</label>
-                <input type="password" name="confirm_password" required>
+                <input type="password" name="confirm_password" id="confirm_password" required minlength="4">
+                <small id="passwordMatch" style="color: #ff00ff; display: none;">✅ Las contraseñas coinciden</small>
             </div>
             
-            <button type="submit" class="btn">CREAR CUENTA</button>
+            <button type="submit" class="btn" id="submitBtn">CREAR CUENTA</button>
         </form>
         
         <div class="login-link">
@@ -301,9 +346,88 @@
     </div>
     
     <script>
-        // Validar teléfono solo números y máximo 10 dígitos
+        // ===========================================
+        // SONIDO CON TU ARCHIVO REGISTRO.MP3
+        // ===========================================
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            try {
+                // Crear elemento de audio con tu archivo MP3
+                const audio = new Audio("{% static 'audio/registro.mp3' %}");
+                audio.volume = 0.3; // Volumen al 30%
+                
+                // Reproducir el sonido
+                audio.play().catch(error => {
+                    console.log("Error reproduciendo audio:", error);
+                });
+                
+                console.log("✅ Sonido MP3 reproducido");
+            } catch (error) {
+                console.log("❌ Error al reproducir audio:", error);
+            }
+            
+            // El formulario se envía inmediatamente
+            return true;
+        });
+        
+        // ===========================================
+        // VALIDACIONES DEL FORMULARIO
+        // ===========================================
+        
+        // Validar teléfono
         document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
+        });
+        
+        // Medidor de fuerza de contraseña
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthBar = document.getElementById('strengthBar');
+            
+            strengthBar.className = 'password-strength-bar';
+            
+            if (password.length < 4) {
+                strengthBar.classList.add('strength-weak');
+            } else if (password.length < 8) {
+                strengthBar.classList.add('strength-medium');
+            } else {
+                strengthBar.classList.add('strength-strong');
+            }
+        });
+        
+        // Verificar contraseñas coinciden
+        document.getElementById('confirm_password').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirm = this.value;
+            const matchMsg = document.getElementById('passwordMatch');
+            
+            if (password === confirm && password.length >= 4) {
+                matchMsg.style.display = 'block';
+                matchMsg.style.color = '#00ff00';
+                matchMsg.innerHTML = '✅ Las contraseñas coinciden';
+            } else {
+                matchMsg.style.display = 'none';
+            }
+        });
+        
+        // Validación final antes de enviar
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            const phone = document.querySelector('input[name="phone"]').value;
+            
+            if (password !== confirm) {
+                e.preventDefault();
+                alert('❌ Las contraseñas no coinciden');
+                return false;
+            }
+            
+            if (phone.length !== 10) {
+                e.preventDefault();
+                alert('❌ El teléfono debe tener 10 dígitos');
+                return false;
+            }
+            
+            return true;
         });
     </script>
 </body>
