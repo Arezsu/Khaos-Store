@@ -94,8 +94,8 @@ class Order(models.Model):
         validators=[MinLengthValidator(10), RegexValidator(r'^\d{10}$', 'El teléfono debe tener 10 dígitos')],
         verbose_name='Teléfono del cliente'
     )
-    address = models.TextField(verbose_name='Dirección')
-    city = models.CharField(max_length=100, verbose_name='Ciudad')
+    address = models.TextField(default='No requerida', verbose_name='Dirección')  # ← AGREGADO DEFAULT
+    city = models.CharField(max_length=100, default='No requerida', verbose_name='Ciudad')  # ← AGREGADO DEFAULT
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, verbose_name='Método de pago')
     total = models.FloatField(validators=[MinValueValidator(0)], verbose_name='Total')
     status = models.CharField(max_length=20, choices=STATUS, default='PENDING', verbose_name='Estado')
@@ -171,12 +171,15 @@ class Order(models.Model):
             ═══════════════════════
             
             📝 INSTRUCCIONES:
-            1. Abre la cuenta en tu Playstation
-            2. Creas cuenta e inicias sesion y ingresas la cuenta recuerda no compartirla si la compartes se te sera eliminada
+            1. Abre la plataforma correspondiente (Steam, PlayStation, Xbox, etc.)
+            2. Ve a "Canjear código" o "Activar producto"
             3. Ingresa la clave: {game_key}
             4. ¡Descarga y disfruta!
             
-            Esta clave también está disponible en tu perfil de KHAOS STORE.
+            ⚠️ IMPORTANTE:
+            • Esta clave es de un solo uso
+            • No la compartas con nadie
+            • Si tienes problemas, contáctanos inmediatamente
             
             ¿Problemas? Contáctanos:
             📧 soporte@khaosstore.com
