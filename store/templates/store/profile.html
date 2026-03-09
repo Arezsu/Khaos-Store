@@ -221,14 +221,6 @@
         
         <h1>👤 MI PERFIL</h1>
         
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="message {{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        
         <div class="profile-grid">
             <div class="profile-sidebar">
                 <div class="avatar">🎮</div>
@@ -250,12 +242,17 @@
                             {% elif order.status == 'SENT' %}status-sent
                             {% elif order.status == 'DELIVERED' %}status-delivered
                             {% endif %}">
-                            {{ order.get_status_display }}
+                            {% if order.status == 'PAID' %}✅ PAGADO
+                            {% elif order.status == 'PENDING' %}⏳ PENDIENTE
+                            {% elif order.status == 'SENT' %}📤 ENVIADO
+                            {% elif order.status == 'DELIVERED' %}📦 ENTREGADO
+                            {% else %}❌ {{ order.status }}
+                            {% endif %}
                         </span>
                     </div>
                     <div class="order-details">
                         <div class="order-product">{{ order.product.name }}</div>
-                        <div class="order-total">${{ order.total|floatformat:0 }}</div>
+                        <div class="order-total">${{ order.total }}</div>
                     </div>
                     <div class="order-date">{{ order.created_at|date:"d/m/Y H:i" }}</div>
                 </div>

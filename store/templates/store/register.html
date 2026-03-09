@@ -120,30 +120,18 @@
             border-radius: 5px;
             margin-bottom: 10px;
             text-align: center;
-            animation: slideIn 0.5s ease;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        .message.success {
-            background: rgba(0, 255, 0, 0.2);
-            border: 1px solid #00ff00;
-            color: #00ff00;
         }
         
         .message.error {
             background: rgba(255, 0, 0, 0.2);
             border: 1px solid #ff0000;
             color: #ff0000;
+        }
+        
+        .message.success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
         }
         
         .info-message {
@@ -176,103 +164,9 @@
         .back-link:hover {
             color: #ff00ff;
         }
-        
-        .password-strength {
-            margin-top: 5px;
-            height: 5px;
-            background: rgba(255, 0, 255, 0.2);
-            border-radius: 5px;
-            overflow: hidden;
-        }
-        
-        .password-strength-bar {
-            height: 100%;
-            width: 0%;
-            transition: all 0.3s;
-        }
-        
-        .strength-weak {
-            background: #ff0000;
-            width: 33%;
-        }
-        
-        .strength-medium {
-            background: #ffff00;
-            width: 66%;
-        }
-        
-        .strength-strong {
-            background: #00ff00;
-            width: 100%;
-        }
-        
-        /* ESTILOS PARA LA PANTALLA DE ESPERA */
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        
-        .loading-overlay.show {
-            display: flex;
-        }
-        
-        .loading-spinner {
-            width: 80px;
-            height: 80px;
-            border: 8px solid #ff00ff;
-            border-top: 8px solid #00ffff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 30px;
-        }
-        
-        .loading-text {
-            color: #fff;
-            font-size: 32px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px #ff00ff;
-        }
-        
-        .loading-timer {
-            color: #00ffff;
-            font-size: 72px;
-            font-weight: bold;
-            margin: 20px 0;
-            text-shadow: 0 0 30px #00ffff;
-        }
-        
-        .loading-subtext {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 18px;
-            text-align: center;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
-    <!-- PANTALLA DE ESPERA CON CONTADOR -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">REDIRIGIENDO</div>
-        <div class="loading-timer" id="loadingTimer">10</div>
-        <div class="loading-subtext">segundos</div>
-    </div>
-    
     <div class="register-container">
         <h1>REGISTRO</h1>
         
@@ -290,7 +184,7 @@
         </div>
         {% endif %}
         
-        <form method="post" action="" id="registerForm">
+        <form method="post" action="">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">
             
@@ -352,55 +246,23 @@
                 
                 <select name="birth_day" required>
                     <option value="">DÍA</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                    <option value="13">13</option>
-                    <option value="14">14</option>
-                    <option value="15">15</option>
-                    <option value="16">16</option>
-                    <option value="17">17</option>
-                    <option value="18">18</option>
-                    <option value="19">19</option>
-                    <option value="20">20</option>
-                    <option value="21">21</option>
-                    <option value="22">22</option>
-                    <option value="23">23</option>
-                    <option value="24">24</option>
-                    <option value="25">25</option>
-                    <option value="26">26</option>
-                    <option value="27">27</option>
-                    <option value="28">28</option>
-                    <option value="29">29</option>
-                    <option value="30">30</option>
-                    <option value="31">31</option>
+                    {% for day in "12345678910111213141516171819202122232425262728293031" %}
+                        <option value="{{ day }}">{{ day }}</option>
+                    {% endfor %}
                 </select>
             </div>
             
             <div class="form-group">
-                <label>CONTRASEÑA (mínimo 4 caracteres)</label>
-                <input type="password" name="password" id="password" required minlength="4">
-                <div class="password-strength">
-                    <div class="password-strength-bar" id="strengthBar"></div>
-                </div>
+                <label>CONTRASEÑA</label>
+                <input type="password" name="password" required>
             </div>
             
             <div class="form-group">
                 <label>CONFIRMAR CONTRASEÑA</label>
-                <input type="password" name="confirm_password" id="confirm_password" required minlength="4">
-                <small id="passwordMatch" style="color: #ff00ff; display: none;">✅ Las contraseñas coinciden</small>
+                <input type="password" name="confirm_password" required>
             </div>
             
-            <button type="submit" class="btn" id="submitBtn">CREAR CUENTA</button>
+            <button type="submit" class="btn">CREAR CUENTA</button>
         </form>
         
         <div class="login-link">
@@ -410,93 +272,9 @@
         <a href="{% url 'home' %}" class="back-link">← VOLVER A LA TIENDA</a>
     </div>
     
-    <!-- AUDIO PERSONALIZADO -->
-    <audio id="registroAudio" src="{% static 'audio/registro.mp3' %}" preload="auto"></audio>
-    
     <script>
-        // Elementos del DOM
-        const registerForm = document.getElementById('registerForm');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const loadingTimer = document.getElementById('loadingTimer');
-        const registroAudio = document.getElementById('registroAudio');
-        
-        // Validar teléfono
         document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
-        });
-        
-        // Medidor de fuerza de contraseña
-        document.getElementById('password').addEventListener('input', function() {
-            const password = this.value;
-            const strengthBar = document.getElementById('strengthBar');
-            
-            strengthBar.className = 'password-strength-bar';
-            
-            if (password.length < 4) {
-                strengthBar.classList.add('strength-weak');
-            } else if (password.length < 8) {
-                strengthBar.classList.add('strength-medium');
-            } else {
-                strengthBar.classList.add('strength-strong');
-            }
-        });
-        
-        // Verificar que las contraseñas coincidan
-        document.getElementById('confirm_password').addEventListener('input', function() {
-            const password = document.getElementById('password').value;
-            const confirm = this.value;
-            const matchMsg = document.getElementById('passwordMatch');
-            
-            if (password === confirm && password.length >= 4) {
-                matchMsg.style.display = 'block';
-                matchMsg.style.color = '#00ff00';
-            } else {
-                matchMsg.style.display = 'none';
-            }
-        });
-        
-        // MANEJAR EL ENVÍO DEL FORMULARIO CON AUDIO Y CONTADOR
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Validaciones finales
-            const password = document.getElementById('password').value;
-            const confirm = document.getElementById('confirm_password').value;
-            const phone = document.querySelector('input[name="phone"]').value;
-            
-            if (password !== confirm) {
-                alert('❌ Las contraseñas no coinciden');
-                return false;
-            }
-            
-            if (phone.length !== 10) {
-                alert('❌ El teléfono debe tener 10 dígitos');
-                return false;
-            }
-            
-            // Mostrar overlay de carga
-            loadingOverlay.classList.add('show');
-            
-            // Reproducir audio personalizado
-            registroAudio.currentTime = 0;
-            registroAudio.play().catch(error => {
-                console.log("Error reproduciendo audio:", error);
-            });
-            
-            // Contador regresivo de 10 segundos
-            let seconds = 10;
-            loadingTimer.textContent = seconds;
-            
-            const countdown = setInterval(() => {
-                seconds--;
-                loadingTimer.textContent = seconds;
-                
-                if (seconds <= 0) {
-                    clearInterval(countdown);
-                    // Enviar el formulario
-                    registerForm.submit();
-                }
-            }, 1000);
         });
     </script>
 </body>

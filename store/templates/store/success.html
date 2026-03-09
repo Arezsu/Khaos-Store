@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>¡Compra Exitosa! - KHAOS STORE</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -120,10 +122,6 @@
                 font-size: 18px;
             }
             
-            .success-container {
-                padding: 30px 20px;
-            }
-            
             .btn {
                 display: block;
                 margin: 10px 0;
@@ -143,8 +141,8 @@
         
         <div class="message">
             <p>Hemos enviado la confirmación a tu correo electrónico.</p>
-            <p style="margin-top: 15px;">En los próximos minutos recibirás la key de tu juego.</p>
-            <p style="font-size: 12px; margin-top: 25px; color: rgba(255,255,255,0.5);">💡 Revisa tu bandeja de spam si no lo ves en la bandeja principal.</p>
+            <p>En los próximos minutos recibirás la key de tu juego.</p>
+            <p style="font-size: 12px; margin-top: 20px;">💡 Revisa tu bandeja de spam</p>
         </div>
         
         <div>

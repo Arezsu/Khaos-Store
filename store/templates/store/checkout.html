@@ -56,8 +56,8 @@
         }
         
         .product-image {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             object-fit: cover;
             border-radius: 10px;
             border: 2px solid #ff00ff;
@@ -68,22 +68,16 @@
         }
         
         .product-name {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
             color: #ff00ff;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
         
         .product-price {
-            font-size: 28px;
+            font-size: 24px;
             color: #00ffff;
             font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .product-description {
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.6;
         }
         
         .form-group {
@@ -209,45 +203,10 @@
             text-shadow: 0 0 10px #00ffff;
         }
         
-        .messages {
-            margin-bottom: 20px;
-        }
-        
-        .message {
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            text-align: center;
-            animation: slideIn 0.5s ease;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        .message.success {
-            background: rgba(0, 255, 0, 0.2);
-            border: 1px solid #00ff00;
-            color: #00ff00;
-        }
-        
-        .message.error {
-            background: rgba(255, 0, 0, 0.2);
-            border: 1px solid #ff0000;
-            color: #ff0000;
-        }
-        
-        .message.info {
-            background: rgba(255, 0, 255, 0.2);
-            border: 1px solid #ff00ff;
-            color: #ff00ff;
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
     </style>
 </head>
@@ -255,29 +214,21 @@
     <div class="checkout-container">
         <h1>CHECKOUT</h1>
         
-        <!-- MENSAJES DE ÉXITO/ERROR -->
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="message {{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        
         <div class="product-summary">
-            {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
-            {% else %}
-                <div class="product-image" style="background: #333; display: flex; align-items: center; justify-content: center;">
-                    <span style="color: #666;">Sin imagen</span>
-                </div>
-            {% endif %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
             <div class="product-details">
                 <div class="product-name">{{ product.name }}</div>
                 <div class="product-price">${{ product.get_price }}</div>
-                <p class="product-description">{{ product.description|truncatewords:20 }}</p>
             </div>
         </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div style="background: rgba(255, 0, 0, 0.2); border: 1px solid #ff00ff; padding: 10px; margin-bottom: 20px; border-radius: 10px;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
         
         <form method="post" action="{% url 'process_payment' product.id %}" id="payment-form">
             {% csrf_token %}
@@ -296,8 +247,8 @@
             
             <div class="form-group">
                 <label>TELÉFONO (10 dígitos)</label>
-                <input type="tel" name="phone" required maxlength="10" placeholder="3001234567">
-                <small style="color: #ff00ff; display: block; margin-top: 5px;">Ej: 3001234567</small>
+                <input type="tel" name="phone" required placeholder="3001234567" maxlength="10">
+                <small style="color: #ff00ff;">10 dígitos, solo números</small>
             </div>
             
             <h2 style="margin: 30px 0 20px;">💳 MÉTODO DE PAGO</h2>
@@ -340,18 +291,15 @@
             element.classList.add('selected');
         }
         
-        // Validar teléfono (solo números, máximo 10)
         document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
         });
         
-        // Validación antes de enviar
         document.getElementById('payment-form').addEventListener('submit', function(e) {
             const phone = document.querySelector('input[name="phone"]').value;
-            
             if (phone.length !== 10) {
                 e.preventDefault();
-                alert('❌ El teléfono debe tener exactamente 10 dígitos');
+                alert('El teléfono debe tener exactamente 10 dígitos');
             }
         });
     </script>
