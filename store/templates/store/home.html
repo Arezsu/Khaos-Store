@@ -127,6 +127,54 @@
             -webkit-text-fill-color: transparent;
         }
         
+        .search-section {
+            margin: 2rem 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .search-form {
+            display: flex;
+            width: 100%;
+            max-width: 600px;
+            gap: 10px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #ff00ff;
+            border-radius: 50px;
+            color: #fff;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 20px #ff00ff;
+            border-color: #00ffff;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border: none;
+            border-radius: 50px;
+            color: #000;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px #ff00ff;
+        }
+        
         .messages {
             max-width: 1400px;
             margin: 1rem auto;
@@ -220,6 +268,13 @@
             box-shadow: 0 0 30px #ff00ff;
         }
         
+        .no-results {
+            text-align: center;
+            padding: 4rem;
+            grid-column: 1/-1;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
         .footer {
             background: rgba(0, 0, 0, 0.9);
             border-top: 3px solid;
@@ -250,35 +305,6 @@
             color: rgba(255, 255, 255, 0.7);
         }
         
-        .footer-section ul li a {
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        
-        .footer-section ul li a:hover {
-            color: #ff00ff;
-            text-shadow: 0 0 10px #ff00ff;
-            padding-left: 10px;
-        }
-        
-        .social-links {
-            display: flex;
-            gap: 1rem;
-            font-size: 1.5rem;
-        }
-        
-        .social-links a {
-            color: #fff;
-            transition: all 0.3s;
-        }
-        
-        .social-links a:hover {
-            color: #ff00ff;
-            transform: scale(1.2) rotate(5deg);
-            text-shadow: 0 0 20px #ff00ff;
-        }
-        
         .copyright {
             text-align: center;
             margin-top: 3rem;
@@ -299,6 +325,10 @@
             .products-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .search-form {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -308,8 +338,6 @@
             <div class="logo">KHAOS_STORE</div>
             <div class="nav-links">
                 <a href="{% url 'home' %}">INICIO</a>
-                <a href="#">JUEGOS</a>
-                <a href="#">OFERTAS</a>
             </div>
             <div class="user-menu">
                 {% if user.is_authenticated %}
@@ -338,16 +366,17 @@
             <p>La tienda gamer más épica</p>
         </section>
         
+        <div class="search-section">
+            <form method="get" class="search-form">
+                <input type="text" name="q" class="search-input" placeholder="🔍 Buscar juego..." value="{{ query }}">
+                <button type="submit" class="search-btn">BUSCAR</button>
+            </form>
+        </div>
+        
         <div class="products-grid">
             {% for product in products %}
             <div class="product-card">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
-                {% else %}
-                    <div class="product-image" style="background: #333; display: flex; align-items: center; justify-content: center;">
-                        <span style="color: #666;">Sin imagen</span>
-                    </div>
-                {% endif %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
                 <div class="product-info">
                     <h3 class="product-title">{{ product.name }}</h3>
                     <div class="product-price">${{ product.get_price }}</div>
@@ -355,8 +384,10 @@
                 </div>
             </div>
             {% empty %}
-            <div style="grid-column: 1/-1; text-align: center; padding: 4rem;">
-                <p>No hay productos disponibles</p>
+            <div class="no-results">
+                <p style="font-size: 48px; margin-bottom: 20px;">🔍</p>
+                <p style="font-size: 24px;">No se encontraron juegos</p>
+                <p style="margin-top: 20px;">Intenta con otra búsqueda</p>
             </div>
             {% endfor %}
         </div>
@@ -367,19 +398,6 @@
             <div class="footer-section">
                 <h3>KHAOS STORE</h3>
                 <p>La mejor tienda de videojuegos</p>
-            </div>
-            <div class="footer-section">
-                <h3>ENLACES RÁPIDOS</h3>
-                <ul>
-                    <li><a href="#">Sobre Nosotros</a></li>
-                    <li><a href="#">Términos y Condiciones</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h3>SÍGUENOS</h3>
-                <div class="social-links">
-                    <a href="https://www.instagram.com/khaos_storecol/" target="_blank">📷 Instagram</a>
-                </div>
             </div>
             <div class="footer-section">
                 <h3>CONTACTO</h3>

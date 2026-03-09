@@ -8,8 +8,12 @@ from datetime import date
 import traceback
 
 def home(request):
-    products = Product.objects.all()
-    return render(request, 'store/home.html', {'products': products})
+    query = request.GET.get('q', '')
+    if query:
+        products = Product.objects.filter(name__icontains=query)
+    else:
+        products = Product.objects.all()
+    return render(request, 'store/home.html', {'products': products, 'query': query})
 
 def register(request):
     if request.method == 'POST':
