@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from .models import Product, Order, UserProfile
 from datetime import date
 import json
+import re
 
 def home(request):
     query = request.GET.get('q', '')
@@ -24,9 +25,11 @@ def register(request):
             password = request.POST.get('password')
             confirm_password = request.POST.get('confirm_password')
             phone = request.POST.get('phone', '')
-            birth_year = request.POST.get('birth_year')
-            birth_month = request.POST.get('birth_month')
-            birth_day = request.POST.get('birth_day')
+            
+            # FECHA DE NACIMIENTO COMENTADA (para activar en el futuro cuando la base de datos esté lista)
+            # birth_year = request.POST.get('birth_year')
+            # birth_month = request.POST.get('birth_month')
+            # birth_day = request.POST.get('birth_day')
             
             # Validaciones básicas
             if not username or not email or not password:
@@ -35,14 +38,24 @@ def register(request):
             if password != confirm_password:
                 return JsonResponse({'success': False, 'error': 'Las contraseñas no coinciden'}, status=400)
             
+            # CONTRASEÑA MÍNIMO 4 CARACTERES
+            if len(password) < 4:
+                return JsonResponse({'success': False, 'error': 'La contraseña debe tener al menos 4 caracteres'}, status=400)
+            
+            # VALIDACION: SOLO LETRAS (CON TILDES) Y NUMEROS
+            # Permite: a-z, A-Z, 0-9, y letras con tildes (áéíóúüñ)
+            # NO permite: !@#$%^&*()_+={}[]|\:;"'<>,.?/
+            if not re.match(r'^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]+$', password):
+                return JsonResponse({'success': False, 'error': 'La contraseña solo puede contener letras (con tildes) y numeros, sin simbolos'}, status=400)
+            
             if User.objects.filter(username=username).exists():
                 return JsonResponse({'success': False, 'error': 'El nombre de usuario ya existe'}, status=400)
             
             if User.objects.filter(email=email).exists():
-                return JsonResponse({'success': False, 'error': 'El email ya está registrado'}, status=400)
+                return JsonResponse({'success': False, 'error': 'El email ya esta registrado'}, status=400)
             
             if len(phone) != 10 or not phone.isdigit():
-                return JsonResponse({'success': False, 'error': 'El teléfono debe tener exactamente 10 dígitos'}, status=400)
+                return JsonResponse({'success': False, 'error': 'El telefono debe tener exactamente 10 digitos'}, status=400)
             
             # Crear usuario
             user = User.objects.create_user(
@@ -51,29 +64,14 @@ def register(request):
                 password=password
             )
             
-            # Intentar crear perfil con fecha de nacimiento
-            try:
-                if birth_year and birth_month and birth_day:
-                    birth_date = date(int(birth_year), int(birth_month), int(birth_day))
-                    UserProfile.objects.create(
-                        user=user,
-                        phone=phone,
-                        birth_date=birth_date
-                    )
-                else:
-                    UserProfile.objects.create(
-                        user=user,
-                        phone=phone
-                    )
-            except Exception as profile_error:
-                print(f"Error creando perfil: {profile_error}")
-                # Si falla, al menos intentamos crear perfil sin fecha
-                UserProfile.objects.create(
-                    user=user,
-                    phone=phone
-                )
+            # Crear perfil SIN fecha de nacimiento (fecha comentada)
+            UserProfile.objects.create(
+                user=user,
+                phone=phone
+                # birth_date=birth_date  # COMENTADO PARA FUTURAS IMPLEMENTACIONES
+            )
             
-            # Iniciar sesión
+            # Iniciar sesion
             login(request, user)
             request.session.save()
             
@@ -112,7 +110,7 @@ def process_payment(request, product_id):
             return redirect('checkout', product_id=product.id)
         
         if len(phone) != 10 or not phone.isdigit():
-            messages.error(request, 'El teléfono debe tener 10 dígitos')
+            messages.error(request, 'El telefono debe tener 10 digitos')
             return redirect('checkout', product_id=product.id)
         
         order = Order.objects.create(
@@ -134,8 +132,8 @@ def process_payment(request, product_id):
         try:
             order.send_confirmation_email()
             order.send_game_key()
-        except Exception as e:
-            print(f"Error enviando emails: {e}")
+        except:
+            pass
         
         request.session['last_order'] = order.order_number
         request.session.save()

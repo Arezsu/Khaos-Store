@@ -64,7 +64,7 @@
             font-weight: bold;
         }
         
-        input, select {
+        input {
             width: 100%;
             padding: 12px;
             background: rgba(255, 255, 255, 0.1);
@@ -75,7 +75,7 @@
             transition: all 0.3s;
         }
         
-        input:focus, select:focus {
+        input:focus {
             outline: none;
             box-shadow: 0 0 20px #ff00ff;
             border-color: #00ffff;
@@ -147,13 +147,6 @@
             margin-bottom: 20px;
             text-align: center;
             color: #ff00ff;
-        }
-        
-        .birth-date {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
         }
         
         .back-link {
@@ -235,7 +228,7 @@
     <div class="loading-overlay" id="loading-overlay">
         <div class="loading-spinner"></div>
         <div class="loading-text" id="loading-text">Procesando registro...</div>
-        <div class="success-message" id="success-message">✅ ¡REGISTRO EXITOSO!</div>
+        <div class="success-message" id="success-message">Registro exitoso</div>
         <div class="countdown" id="countdown-container" style="display: none;">
             Redirigiendo en <span id="timer">10</span> segundos...
         </div>
@@ -254,7 +247,7 @@
         
         {% if request.GET.next %}
         <div class="info-message">
-            🔒 Regístrate para continuar tu compra
+            Registrate para continuar tu compra
         </div>
         {% endif %}
         
@@ -273,13 +266,15 @@
             </div>
             
             <div class="form-group">
-                <label>TELÉFONO (10 dígitos)</label>
+                <label>TELEFONO (10 digitos)</label>
                 <input type="tel" name="phone" required maxlength="10" placeholder="3001234567">
             </div>
             
+            <!-- SECCION DE FECHA DE NACIMIENTO COMENTADA PARA FUTURAS IMPLEMENTACIONES -->
+            <!--
             <label>FECHA DE NACIMIENTO</label>
             <div class="birth-date">
-                <select name="birth_year" required id="birth-year">
+                <select name="birth_year" id="birth-year">
                     <option value="">AÑO</option>
                     <option value="1990">1990</option>
                     <option value="1991">1991</option>
@@ -302,7 +297,7 @@
                     <option value="2008">2008</option>
                 </select>
                 
-                <select name="birth_month" required id="birth-month">
+                <select name="birth_month" id="birth-month">
                     <option value="">MES</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -318,18 +313,19 @@
                     <option value="12">12</option>
                 </select>
                 
-                <select name="birth_day" required id="birth-day">
-                    <option value="">DÍA</option>
+                <select name="birth_day" id="birth-day">
+                    <option value="">DIA</option>
                 </select>
             </div>
+            -->
             
             <div class="form-group">
-                <label>CONTRASEÑA</label>
-                <input type="password" name="password" required minlength="6">
+                <label>CONTRASENA (minimo 4 caracteres, solo letras y numeros)</label>
+                <input type="password" name="password" required minlength="4" pattern="[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]+" title="Solo letras (con tildes) y numeros, sin simbolos">
             </div>
             
             <div class="form-group">
-                <label>CONFIRMAR CONTRASEÑA</label>
+                <label>CONFIRMAR CONTRASENA</label>
                 <input type="password" name="confirm_password" required>
             </div>
             
@@ -337,33 +333,25 @@
         </form>
         
         <div class="login-link">
-            ¿Ya tienes cuenta? <a href="{% url 'login' %}?next={{ request.GET.next }}">INICIAR SESIÓN</a>
+            ¿Ya tienes cuenta? <a href="{% url 'login' %}?next={{ request.GET.next }}">INICIAR SESION</a>
         </div>
         
         <a href="{% url 'home' %}" class="back-link">← VOLVER A LA TIENDA</a>
     </div>
     
     <script>
-        // Elementos
         const registroSound = document.getElementById('registro-sound');
         const loadingOverlay = document.getElementById('loading-overlay');
         const registerForm = document.getElementById('register-form');
-        const yearSelect = document.getElementById('birth-year');
-        const monthSelect = document.getElementById('birth-month');
-        const daySelect = document.getElementById('birth-day');
         const loadingText = document.getElementById('loading-text');
         const successMessage = document.getElementById('success-message');
         const countdownContainer = document.getElementById('countdown-container');
         const timerElement = document.getElementById('timer');
         
-        // Ocultar elementos inicialmente
         successMessage.style.display = 'none';
         countdownContainer.style.display = 'none';
-        
-        // Configurar volumen del audio
         registroSound.volume = 0.5;
         
-        // Función para reproducir sonido
         function playRegistroSound() {
             try {
                 registroSound.currentTime = 0;
@@ -373,66 +361,16 @@
             }
         }
         
-        // Función para actualizar días según mes
-        function updateDays() {
-            const year = parseInt(yearSelect.value);
-            const month = parseInt(monthSelect.value);
-            
-            if (!month) {
-                daySelect.innerHTML = '<option value="">DÍA</option>';
-                return;
-            }
-            
-            let maxDays = 31;
-            
-            if (month === 2) {
-                if (year) {
-                    if ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) {
-                        maxDays = 29;
-                    } else {
-                        maxDays = 28;
-                    }
-                } else {
-                    maxDays = 29;
-                }
-            } else if ([4, 6, 9, 11].includes(month)) {
-                maxDays = 30;
-            }
-            
-            const currentDay = daySelect.value;
-            daySelect.innerHTML = '<option value="">DÍA</option>';
-            
-            for (let i = 1; i <= maxDays; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                daySelect.appendChild(option);
-            }
-            
-            if (currentDay && parseInt(currentDay) <= maxDays) {
-                daySelect.value = currentDay;
-            }
-        }
-        
-        yearSelect.addEventListener('change', updateDays);
-        monthSelect.addEventListener('change', updateDays);
-        updateDays();
-        
-        // Validación de teléfono
         document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
         });
         
-        // Manejo del envío del formulario
         registerForm.addEventListener('submit', function(e) {
             const username = document.querySelector('input[name="username"]').value.trim();
             const email = document.querySelector('input[name="email"]').value.trim();
             const phone = document.querySelector('input[name="phone"]').value;
             const password = document.querySelector('input[name="password"]').value;
             const confirm = document.querySelector('input[name="confirm_password"]').value;
-            const year = yearSelect.value;
-            const month = monthSelect.value;
-            const day = daySelect.value;
             
             let isValid = true;
             let errorMessage = '';
@@ -441,16 +379,16 @@
                 errorMessage = 'El nombre de usuario es obligatorio';
                 isValid = false;
             } else if (!email || !email.includes('@')) {
-                errorMessage = 'Ingresa un email válido';
+                errorMessage = 'Ingresa un email valido';
                 isValid = false;
             } else if (phone.length !== 10) {
-                errorMessage = 'El teléfono debe tener exactamente 10 dígitos';
+                errorMessage = 'El telefono debe tener exactamente 10 digitos';
                 isValid = false;
-            } else if (!year || !month || !day) {
-                errorMessage = 'Debes seleccionar fecha de nacimiento completa';
+            } else if (password.length < 4) {
+                errorMessage = 'La contraseña debe tener al menos 4 caracteres';
                 isValid = false;
-            } else if (password.length < 6) {
-                errorMessage = 'La contraseña debe tener al menos 6 caracteres';
+            } else if (!/^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]+$/.test(password)) {
+                errorMessage = 'La contraseña solo puede contener letras (con tildes) y numeros, sin simbolos';
                 isValid = false;
             } else if (password !== confirm) {
                 errorMessage = 'Las contraseñas no coinciden';
@@ -463,16 +401,13 @@
                 return;
             }
             
-            // Prevenir envío inmediato
             e.preventDefault();
             
-            // Mostrar overlay de carga
             loadingOverlay.classList.add('show');
             loadingText.textContent = 'Procesando registro...';
             successMessage.style.display = 'none';
             countdownContainer.style.display = 'none';
             
-            // Enviar formulario
             fetch(registerForm.action || window.location.href, {
                 method: 'POST',
                 body: new FormData(registerForm),
@@ -484,7 +419,7 @@
             .then(data => {
                 if (data.success) {
                     playRegistroSound();
-                    loadingText.textContent = '✅ ¡REGISTRO EXITOSO!';
+                    loadingText.textContent = 'Registro exitoso';
                     successMessage.style.display = 'block';
                     
                     let seconds = 10;
@@ -501,7 +436,7 @@
                         }
                     }, 1000);
                 } else {
-                    loadingText.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
+                    loadingText.textContent = 'Error: ' + (data.error || 'Error desconocido');
                     setTimeout(() => {
                         loadingOverlay.classList.remove('show');
                     }, 3000);
@@ -509,7 +444,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                loadingText.textContent = '❌ Error en el registro';
+                loadingText.textContent = 'Error en el registro';
                 setTimeout(() => {
                     loadingOverlay.classList.remove('show');
                 }, 3000);
