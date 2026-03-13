@@ -222,13 +222,6 @@
             50% { opacity: 0.5; }
             100% { opacity: 1; }
         }
-        
-        .countdown {
-            color: #ff00ff;
-            font-size: 48px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
     </style>
 </head>
 <body>
@@ -236,8 +229,6 @@
         <div class="loading-spinner"></div>
         <div class="loading-text" id="loading-text">Procesando registro...</div>
         <div class="success-message" id="success-message">✅ ¡REGISTRO EXITOSO!</div>
-        <div class="countdown" id="countdown">10</div>
-        <div class="loading-text">Redirigiendo en <span id="timer">10</span> segundos...</div>
     </div>
 
     <div class="register-container">
@@ -350,8 +341,6 @@
         const yearSelect = document.getElementById('birth-year');
         const monthSelect = document.getElementById('birth-month');
         const daySelect = document.getElementById('birth-day');
-        const timerElement = document.getElementById('timer');
-        const countdownElement = document.getElementById('countdown');
         const loadingText = document.getElementById('loading-text');
         const successMessage = document.getElementById('success-message');
         
@@ -421,24 +410,6 @@
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
         });
         
-        // Función para iniciar contador regresivo
-        function startCountdown(seconds) {
-            let counter = seconds;
-            timerElement.textContent = counter;
-            countdownElement.textContent = counter;
-            
-            const interval = setInterval(() => {
-                counter--;
-                timerElement.textContent = counter;
-                countdownElement.textContent = counter;
-                
-                if (counter <= 0) {
-                    clearInterval(interval);
-                    window.location.href = "{% url 'home' %}";
-                }
-            }, 1000);
-        }
-        
         // Manejo del envío del formulario
         registerForm.addEventListener('submit', function(e) {
             const username = document.querySelector('input[name="username"]').value.trim();
@@ -498,12 +469,23 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.text())
-            .then(() => {
-                // Registro exitoso
-                loadingText.textContent = '✅ ¡REGISTRO EXITOSO!';
-                successMessage.style.display = 'block';
-                startCountdown(10); // 10 segundos de espera
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Registro exitoso
+                    loadingText.textContent = '✅ ¡REGISTRO EXITOSO!';
+                    successMessage.style.display = 'block';
+                    
+                    // Redirigir a home después de 1 segundo
+                    setTimeout(() => {
+                        window.location.href = "{% url 'home' %}";
+                    }, 1000);
+                } else {
+                    loadingText.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
+                    setTimeout(() => {
+                        loadingOverlay.classList.remove('show');
+                    }, 3000);
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
