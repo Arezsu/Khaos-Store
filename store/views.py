@@ -71,9 +71,15 @@ def register(request):
             print(f"Sesión iniciada para: {request.user.username}")
             print(f"Sesión ID: {request.session.session_key}")
             
+            # Solo si es AJAX devolvemos JSON
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': True, 'redirect': '/'})
+                return JsonResponse({
+                    'success': True, 
+                    'redirect': '/',
+                    'message': 'Registro exitoso'
+                })
             
+            # Si no es AJAX, redirigir normal
             next_url = request.POST.get('next') or request.GET.get('next')
             if next_url:
                 return redirect(next_url)

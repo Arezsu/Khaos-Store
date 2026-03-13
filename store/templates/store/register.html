@@ -356,20 +356,20 @@
         const countdownContainer = document.getElementById('countdown-container');
         const timerElement = document.getElementById('timer');
         
-        // Ocultar mensaje de éxito y contador inicialmente
+        // Ocultar elementos inicialmente
         successMessage.style.display = 'none';
         countdownContainer.style.display = 'none';
         
-        // Configurar volumen
+        // Configurar volumen del audio
         registroSound.volume = 0.5;
         
-        // Función para reproducir sonido
+        // Función para reproducir sonido de éxito (solo cuando el registro es exitoso)
         function playRegistroSound() {
             try {
                 registroSound.currentTime = 0;
-                registroSound.play().catch(e => console.log("Error audio:", e));
+                registroSound.play().catch(e => console.log("Error reproduciendo audio:", e));
             } catch (e) {
-                console.log("Error:", e);
+                console.log("Error con audio:", e);
             }
         }
         
@@ -423,23 +423,6 @@
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
         });
         
-        // Función para iniciar contador de 10 segundos
-        function startCountdown() {
-            let seconds = 10;
-            timerElement.textContent = seconds;
-            countdownContainer.style.display = 'block';
-            
-            const interval = setInterval(() => {
-                seconds--;
-                timerElement.textContent = seconds;
-                
-                if (seconds <= 0) {
-                    clearInterval(interval);
-                    window.location.href = "{% url 'home' %}";
-                }
-            }, 1000);
-        }
-        
         // Manejo del envío del formulario
         registerForm.addEventListener('submit', function(e) {
             const username = document.querySelector('input[name="username"]').value.trim();
@@ -483,16 +466,13 @@
             // Prevenir envío inmediato
             e.preventDefault();
             
-            // Reproducir sonido
-            playRegistroSound();
-            
-            // Mostrar overlay
+            // Mostrar overlay de carga (sin sonido aún)
             loadingOverlay.classList.add('show');
             loadingText.textContent = 'Procesando registro...';
             successMessage.style.display = 'none';
             countdownContainer.style.display = 'none';
             
-            // Enviar formulario con fetch para capturar respuesta
+            // Enviar formulario con fetch
             fetch(registerForm.action || window.location.href, {
                 method: 'POST',
                 body: new FormData(registerForm),
@@ -500,16 +480,39 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Error en el servidor');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    // Registro exitoso
+                    // ✅ REGISTRO EXITOSO - SOLO AHORA SE REPRODUCE EL AUDIO
+                    playRegistroSound();
+                    
                     loadingText.textContent = '✅ ¡REGISTRO EXITOSO!';
                     successMessage.style.display = 'block';
                     
                     // Iniciar contador de 10 segundos
-                    startCountdown();
+                    let seconds = 10;
+                    timerElement.textContent = seconds;
+                    countdownContainer.style.display = 'block';
+                    
+                    const interval = setInterval(() => {
+                        seconds--;
+                        timerElement.textContent = seconds;
+                        
+                        if (seconds <= 0) {
+                            clearInterval(interval);
+                            console.log("Redirigiendo a home...");
+                            window.location.href = "{% url 'home' %}";
+                        }
+                    }, 1000);
                 } else {
+                    // ❌ ERROR EN REGISTRO - NO HAY AUDIO
                     loadingText.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
                     setTimeout(() => {
                         loadingOverlay.classList.remove('show');
@@ -518,7 +521,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                loadingText.textContent = '❌ Error en el registro';
+                loadingText.textContent = '❌ Error en el registro: ' + error.message;
                 setTimeout(() => {
                     loadingOverlay.classList.remove('show');
                 }, 3000);
