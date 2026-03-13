@@ -237,7 +237,7 @@
         <div class="loading-text" id="loading-text">Procesando registro...</div>
         <div class="success-message" id="success-message">✅ ¡REGISTRO EXITOSO!</div>
         <div class="countdown" id="countdown-container" style="display: none;">
-            Redirigiendo a la tienda en <span id="timer">10</span> segundos...
+            Redirigiendo en <span id="timer">10</span> segundos...
         </div>
     </div>
 
@@ -363,13 +363,13 @@
         // Configurar volumen del audio
         registroSound.volume = 0.5;
         
-        // Función para reproducir sonido de éxito (solo cuando el registro es exitoso)
+        // Función para reproducir sonido
         function playRegistroSound() {
             try {
                 registroSound.currentTime = 0;
-                registroSound.play().catch(e => console.log("Error reproduciendo audio:", e));
+                registroSound.play().catch(e => console.log("Error audio:", e));
             } catch (e) {
-                console.log("Error con audio:", e);
+                console.log("Error:", e);
             }
         }
         
@@ -466,13 +466,13 @@
             // Prevenir envío inmediato
             e.preventDefault();
             
-            // Mostrar overlay de carga (sin sonido aún)
+            // Mostrar overlay de carga
             loadingOverlay.classList.add('show');
             loadingText.textContent = 'Procesando registro...';
             successMessage.style.display = 'none';
             countdownContainer.style.display = 'none';
             
-            // Enviar formulario con fetch
+            // Enviar formulario
             fetch(registerForm.action || window.location.href, {
                 method: 'POST',
                 body: new FormData(registerForm),
@@ -480,23 +480,13 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.error || 'Error en el servidor');
-                    });
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // ✅ REGISTRO EXITOSO - SOLO AHORA SE REPRODUCE EL AUDIO
                     playRegistroSound();
-                    
                     loadingText.textContent = '✅ ¡REGISTRO EXITOSO!';
                     successMessage.style.display = 'block';
                     
-                    // Iniciar contador de 10 segundos
                     let seconds = 10;
                     timerElement.textContent = seconds;
                     countdownContainer.style.display = 'block';
@@ -507,13 +497,10 @@
                         
                         if (seconds <= 0) {
                             clearInterval(interval);
-                            console.log("Redirigiendo a home...");
-                            // Redirigir a home usando la URL de Django
                             window.location.href = "{% url 'home' %}";
                         }
                     }, 1000);
                 } else {
-                    // ❌ ERROR EN REGISTRO - NO HAY AUDIO
                     loadingText.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
                     setTimeout(() => {
                         loadingOverlay.classList.remove('show');
@@ -522,7 +509,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                loadingText.textContent = '❌ Error en el registro: ' + error.message;
+                loadingText.textContent = '❌ Error en el registro';
                 setTimeout(() => {
                     loadingOverlay.classList.remove('show');
                 }, 3000);

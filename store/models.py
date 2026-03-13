@@ -36,7 +36,7 @@ class UserProfile(models.Model):
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
     favorite_games = models.ManyToManyField(Product, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)  # <--- CAMPO IMPORTANTE
     
     def __str__(self):
         return self.user.username

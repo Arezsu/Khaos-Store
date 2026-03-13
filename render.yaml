@@ -7,7 +7,7 @@ services:
       python manage.py collectstatic --noinput
       python manage.py makemigrations store
       python manage.py migrate
-    startCommand: gunicorn khaos_store.wsgi:application
+    startCommand: gunicorn khaos_store.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -29,8 +29,6 @@ services:
         value: "False"
       - key: ALLOWED_HOSTS
         value: ".onrender.com,localhost,127.0.0.1"
-      - key: CREATE_SUPERUSER
-        value: "False"  # Evita que intente crear superuser automáticamente
 
 databases:
   - name: khaos-store-db

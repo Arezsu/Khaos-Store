@@ -44,10 +44,16 @@ def register(request):
             if len(phone) != 10 or not phone.isdigit():
                 return JsonResponse({'success': False, 'error': 'El teléfono debe tener 10 dígitos'}, status=400)
             
+            # Validar fecha de nacimiento
             try:
                 birth_date = date(int(birth_year), int(birth_month), int(birth_day))
+                # Calcular edad
+                today = date.today()
+                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+                if age < 18:
+                    return JsonResponse({'success': False, 'error': 'Debes ser mayor de 18 años'}, status=400)
             except:
-                return JsonResponse({'success': False, 'error': 'Fecha inválida'}, status=400)
+                return JsonResponse({'success': False, 'error': 'Fecha de nacimiento inválida'}, status=400)
             
             # Crear usuario
             user = User.objects.create_user(
@@ -56,7 +62,7 @@ def register(request):
                 password=password
             )
             
-            # Crear perfil
+            # Crear perfil CON birth_date
             UserProfile.objects.create(
                 user=user,
                 phone=phone,
@@ -69,9 +75,7 @@ def register(request):
             request.session.modified = True
             
             print(f"Sesión iniciada para: {request.user.username}")
-            print(f"Sesión ID: {request.session.session_key}")
             
-            # Solo si es AJAX devolvemos JSON
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': True, 
@@ -79,7 +83,6 @@ def register(request):
                     'message': 'Registro exitoso'
                 })
             
-            # Si no es AJAX, redirigir normal
             next_url = request.POST.get('next') or request.GET.get('next')
             if next_url:
                 return redirect(next_url)
