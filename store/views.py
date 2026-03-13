@@ -27,10 +27,10 @@ def register(request):
             confirm_password = request.POST.get('confirm_password')
             phone = request.POST.get('phone', '')
             
-            # FECHA DE NACIMIENTO COMENTADA (para activar en el futuro)
-            # birth_year = request.POST.get('birth_year')
-            # birth_month = request.POST.get('birth_month')
-            # birth_day = request.POST.get('birth_day')
+            # FECHA DE NACIMIENTO ACTIVADA
+            birth_year = request.POST.get('birth_year')
+            birth_month = request.POST.get('birth_month')
+            birth_day = request.POST.get('birth_day')
             
             # Validaciones básicas
             if not username or not email or not password:
@@ -61,25 +61,46 @@ def register(request):
                 password=password
             )
             
-            # Crear perfil - AHORA CON MANEJO ESPECÍFICO DE ERRORES
+            # Intentar crear perfil CON fecha de nacimiento
+            perfil_creado = False
             try:
-                # Intentar crear perfil SIN fecha de nacimiento
-                UserProfile.objects.create(
-                    user=user,
-                    phone=phone
-                    # birth_date=birth_date  # COMENTADO
-                )
+                if birth_year and birth_month and birth_day:
+                    birth_date = date(int(birth_year), int(birth_month), int(birth_day))
+                    UserProfile.objects.create(
+                        user=user,
+                        phone=phone,
+                        birth_date=birth_date
+                    )
+                else:
+                    UserProfile.objects.create(
+                        user=user,
+                        phone=phone
+                    )
+                perfil_creado = True
+                print(f"Perfil creado exitosamente para {username}")
             except Exception as profile_error:
                 print(f"Error creando perfil (no crítico): {profile_error}")
                 # Si falla el perfil, al menos el usuario ya existe
-                # No devolvemos error al cliente porque el usuario ya se creó
+                # Intentamos crear perfil sin fecha como fallback
+                try:
+                    UserProfile.objects.create(
+                        user=user,
+                        phone=phone
+                    )
+                    print(f"Perfil creado sin fecha para {username}")
+                except:
+                    print(f"No se pudo crear ningún perfil para {username}")
             
-            # Iniciar sesión (EL USUARIO YA EXISTE, AUNQUE EL PERFIL FALLE)
-            login(request, user)
-            request.session.save()
+            # NO INICIAMOS SESIÓN - El usuario debe iniciar sesión manualmente
             
-            # SIEMPRE devolver éxito, aunque el perfil haya fallado
-            return JsonResponse({'success': True, 'redirect': '/'})
+            # Mensaje de éxito (sin sesión iniciada)
+            mensaje = 'Usuario guardado correctamente. Por favor inicia sesión.'
+            
+            return JsonResponse({
+                'success': True, 
+                'redirect': '/login/?registered=true',
+                'message': mensaje
+            })
             
         except Exception as e:
             print(f"ERROR CRÍTICO EN REGISTRO: {e}")

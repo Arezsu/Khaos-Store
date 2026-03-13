@@ -64,7 +64,7 @@
             font-weight: bold;
         }
         
-        input {
+        input, select {
             width: 100%;
             padding: 12px;
             background: rgba(255, 255, 255, 0.1);
@@ -75,7 +75,7 @@
             transition: all 0.3s;
         }
         
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             box-shadow: 0 0 20px #ff00ff;
             border-color: #00ffff;
@@ -147,6 +147,13 @@
             margin-bottom: 20px;
             text-align: center;
             color: #ff00ff;
+        }
+        
+        .birth-date {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         
         .back-link {
@@ -228,9 +235,9 @@
     <div class="loading-overlay" id="loading-overlay">
         <div class="loading-spinner"></div>
         <div class="loading-text" id="loading-text">Procesando registro...</div>
-        <div class="success-message" id="success-message">Registro exitoso</div>
+        <div class="success-message" id="success-message">Usuario guardado correctamente</div>
         <div class="countdown" id="countdown-container" style="display: none;">
-            Redirigiendo en <span id="timer">10</span> segundos...
+            Volviendo al inicio en <span id="timer">10</span> segundos...
         </div>
     </div>
 
@@ -247,7 +254,7 @@
         
         {% if request.GET.next %}
         <div class="info-message">
-            Registrate para continuar tu compra
+            Regístrate para continuar tu compra
         </div>
         {% endif %}
         
@@ -270,11 +277,9 @@
                 <input type="tel" name="phone" required maxlength="10" placeholder="3001234567">
             </div>
             
-            <!-- SECCION DE FECHA DE NACIMIENTO COMENTADA PARA FUTURAS IMPLEMENTACIONES -->
-            <!--
             <label>FECHA DE NACIMIENTO</label>
             <div class="birth-date">
-                <select name="birth_year" id="birth-year">
+                <select name="birth_year" required id="birth-year">
                     <option value="">AÑO</option>
                     <option value="1990">1990</option>
                     <option value="1991">1991</option>
@@ -297,7 +302,7 @@
                     <option value="2008">2008</option>
                 </select>
                 
-                <select name="birth_month" id="birth-month">
+                <select name="birth_month" required id="birth-month">
                     <option value="">MES</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -313,11 +318,10 @@
                     <option value="12">12</option>
                 </select>
                 
-                <select name="birth_day" id="birth-day">
+                <select name="birth_day" required id="birth-day">
                     <option value="">DIA</option>
                 </select>
             </div>
-            -->
             
             <div class="form-group">
                 <label>CONTRASENA (minimo 4 caracteres, solo letras y numeros)</label>
@@ -343,6 +347,9 @@
         const registroSound = document.getElementById('registro-sound');
         const loadingOverlay = document.getElementById('loading-overlay');
         const registerForm = document.getElementById('register-form');
+        const yearSelect = document.getElementById('birth-year');
+        const monthSelect = document.getElementById('birth-month');
+        const daySelect = document.getElementById('birth-day');
         const loadingText = document.getElementById('loading-text');
         const successMessage = document.getElementById('success-message');
         const countdownContainer = document.getElementById('countdown-container');
@@ -361,6 +368,50 @@
             }
         }
         
+        function updateDays() {
+            const year = parseInt(yearSelect.value);
+            const month = parseInt(monthSelect.value);
+            
+            if (!month) {
+                daySelect.innerHTML = '<option value="">DIA</option>';
+                return;
+            }
+            
+            let maxDays = 31;
+            
+            if (month === 2) {
+                if (year) {
+                    if ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) {
+                        maxDays = 29;
+                    } else {
+                        maxDays = 28;
+                    }
+                } else {
+                    maxDays = 29;
+                }
+            } else if ([4, 6, 9, 11].includes(month)) {
+                maxDays = 30;
+            }
+            
+            const currentDay = daySelect.value;
+            daySelect.innerHTML = '<option value="">DIA</option>';
+            
+            for (let i = 1; i <= maxDays; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                daySelect.appendChild(option);
+            }
+            
+            if (currentDay && parseInt(currentDay) <= maxDays) {
+                daySelect.value = currentDay;
+            }
+        }
+        
+        yearSelect.addEventListener('change', updateDays);
+        monthSelect.addEventListener('change', updateDays);
+        updateDays();
+        
         document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
         });
@@ -371,6 +422,9 @@
             const phone = document.querySelector('input[name="phone"]').value;
             const password = document.querySelector('input[name="password"]').value;
             const confirm = document.querySelector('input[name="confirm_password"]').value;
+            const year = yearSelect.value;
+            const month = monthSelect.value;
+            const day = daySelect.value;
             
             let isValid = true;
             let errorMessage = '';
@@ -383,6 +437,9 @@
                 isValid = false;
             } else if (phone.length !== 10) {
                 errorMessage = 'El telefono debe tener exactamente 10 digitos';
+                isValid = false;
+            } else if (!year || !month || !day) {
+                errorMessage = 'Debes seleccionar fecha de nacimiento completa';
                 isValid = false;
             } else if (password.length < 4) {
                 errorMessage = 'La contraseña debe tener al menos 4 caracteres';
@@ -419,7 +476,7 @@
             .then(data => {
                 if (data.success) {
                     playRegistroSound();
-                    loadingText.textContent = 'Registro exitoso';
+                    loadingText.textContent = data.message || 'Usuario guardado correctamente';
                     successMessage.style.display = 'block';
                     
                     let seconds = 10;
