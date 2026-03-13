@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Product, Order, UserProfile
@@ -8,8 +8,12 @@ from datetime import date
 import traceback
 
 def home(request):
-    products = Product.objects.all()
-    return render(request, 'store/home.html', {'products': products})
+    query = request.GET.get('q', '')
+    if query:
+        products = Product.objects.filter(name__icontains=query)
+    else:
+        products = Product.objects.all()
+    return render(request, 'store/home.html', {'products': products, 'query': query})
 
 def register(request):
     if request.method == 'POST':
@@ -69,11 +73,11 @@ def register(request):
             birth_date=birth_date
         )
         
-        # Iniciar sesión
+        # Iniciar sesión automáticamente
         login(request, user)
         messages.success(request, '¡Registro exitoso! Bienvenido a KHAOS STORE')
         
-        # Redirigir
+        # Redirigir a la página anterior si existe
         next_url = request.POST.get('next') or request.GET.get('next')
         if next_url:
             return redirect(next_url)
@@ -88,16 +92,19 @@ def checkout(request, product_id):
 
 @login_required(login_url='login')
 def process_payment(request, product_id):
+    # Solo POST
     if request.method != 'POST':
         return redirect('home')
     
     try:
         product = get_object_or_404(Product, id=product_id)
         
+        # Validar stock
         if product.stock <= 0:
             messages.error(request, 'Producto agotado')
             return redirect('home')
         
+        # Validar campos
         name = request.POST.get('name')
         email = request.POST.get('email')
         phone = request.POST.get('phone')
@@ -111,6 +118,7 @@ def process_payment(request, product_id):
             messages.error(request, 'El teléfono debe tener 10 dígitos')
             return redirect('checkout', product_id=product.id)
         
+        # Crear orden
         order = Order.objects.create(
             product=product,
             customer_name=name,
@@ -124,16 +132,20 @@ def process_payment(request, product_id):
             status='PAID'
         )
         
+        # Restar stock
         product.stock -= 1
         product.save()
         
+        # Enviar emails
         try:
             order.send_confirmation_email()
             order.send_game_key()
         except Exception as e:
             print(f"Error en emails: {e}")
         
+        # Guardar en sesión
         request.session['last_order'] = order.order_number
+        
         messages.success(request, '¡Pago exitoso! Revisa tu correo')
         return redirect('success', order_id=order.order_number)
         
@@ -147,9 +159,14 @@ def success(request, order_id):
 
 @login_required(login_url='login')
 def profile(request):
-    user_profile = UserProfile.objects.get_or_create(user=request.user)[0]
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'store/profile.html', {
-        'profile': user_profile,
-        'orders': orders
-    })
+    try:
+        user_profile = UserProfile.objects.get_or_create(user=request.user)[0]
+        orders = Order.objects.filter(user=request.user).order_by('-created_at')
+        return render(request, 'store/profile.html', {
+            'profile': user_profile,
+            'orders': orders
+        })
+    except Exception as e:
+        print(f"Error en profile: {e}")
+        messages.error(request, 'Error al cargar el perfil')
+        return redirect('home')
