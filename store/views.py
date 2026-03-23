@@ -8,7 +8,6 @@ from .models import Product, Order, UserProfile
 from datetime import date
 import json
 import re
-import traceback
 
 def home(request):
     query = request.GET.get('q', '')
@@ -26,13 +25,11 @@ def register(request):
             password = request.POST.get('password')
             confirm_password = request.POST.get('confirm_password')
             phone = request.POST.get('phone', '')
-            
-            # FECHA DE NACIMIENTO ACTIVADA
             birth_year = request.POST.get('birth_year')
             birth_month = request.POST.get('birth_month')
             birth_day = request.POST.get('birth_day')
             
-            # Validaciones básicas
+            # Validaciones
             if not username or not email or not password:
                 return JsonResponse({'success': False, 'error': 'Todos los campos son obligatorios'}, status=400)
             
@@ -43,16 +40,16 @@ def register(request):
                 return JsonResponse({'success': False, 'error': 'La contraseña debe tener al menos 4 caracteres'}, status=400)
             
             if not re.match(r'^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]+$', password):
-                return JsonResponse({'success': False, 'error': 'La contraseña solo puede contener letras (con tildes) y números, sin símbolos'}, status=400)
+                return JsonResponse({'success': False, 'error': 'La contraseña solo puede contener letras y números'}, status=400)
             
             if User.objects.filter(username=username).exists():
-                return JsonResponse({'success': False, 'error': 'El nombre de usuario ya existe'}, status=400)
+                return JsonResponse({'success': False, 'error': 'El usuario ya existe'}, status=400)
             
             if User.objects.filter(email=email).exists():
                 return JsonResponse({'success': False, 'error': 'El email ya está registrado'}, status=400)
             
             if len(phone) != 10 or not phone.isdigit():
-                return JsonResponse({'success': False, 'error': 'El teléfono debe tener exactamente 10 dígitos'}, status=400)
+                return JsonResponse({'success': False, 'error': 'El teléfono debe tener 10 dígitos'}, status=400)
             
             # Crear usuario
             user = User.objects.create_user(
@@ -61,51 +58,29 @@ def register(request):
                 password=password
             )
             
-            # Intentar crear perfil CON fecha de nacimiento
-            perfil_creado = False
+            # Crear perfil con fecha de nacimiento
             try:
-                if birth_year and birth_month and birth_day:
-                    birth_date = date(int(birth_year), int(birth_month), int(birth_day))
-                    UserProfile.objects.create(
-                        user=user,
-                        phone=phone,
-                        birth_date=birth_date
-                    )
-                else:
-                    UserProfile.objects.create(
-                        user=user,
-                        phone=phone
-                    )
-                perfil_creado = True
-                print(f"Perfil creado exitosamente para {username}")
-            except Exception as profile_error:
-                print(f"Error creando perfil (no crítico): {profile_error}")
-                # Si falla el perfil, al menos el usuario ya existe
-                # Intentamos crear perfil sin fecha como fallback
-                try:
-                    UserProfile.objects.create(
-                        user=user,
-                        phone=phone
-                    )
-                    print(f"Perfil creado sin fecha para {username}")
-                except:
-                    print(f"No se pudo crear ningún perfil para {username}")
+                birth_date = date(int(birth_year), int(birth_month), int(birth_day))
+                UserProfile.objects.create(
+                    user=user,
+                    phone=phone,
+                    birth_date=birth_date
+                )
+            except:
+                UserProfile.objects.create(
+                    user=user,
+                    phone=phone
+                )
             
-            # NO INICIAMOS SESIÓN - El usuario debe iniciar sesión manualmente
+            # Iniciar sesión
+            login(request, user)
+            request.session.save()
             
-            # Mensaje de éxito (sin sesión iniciada)
-            mensaje = 'Usuario guardado correctamente. Por favor inicia sesión.'
-            
-            return JsonResponse({
-                'success': True, 
-                'redirect': '/login/?registered=true',
-                'message': mensaje
-            })
+            return JsonResponse({'success': True, 'redirect': '/'})
             
         except Exception as e:
-            print(f"ERROR CRÍTICO EN REGISTRO: {e}")
-            traceback.print_exc()
-            return JsonResponse({'success': False, 'error': 'Error en el servidor'}, status=500)
+            print(f"ERROR EN REGISTRO: {e}")
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
     return render(request, 'store/register.html')
 
@@ -158,13 +133,13 @@ def process_payment(request, product_id):
         try:
             order.send_confirmation_email()
             order.send_game_key()
-        except:
-            pass
+        except Exception as e:
+            print(f"Error enviando emails: {e}")
         
         request.session['last_order'] = order.order_number
         request.session.save()
         
-        messages.success(request, '¡Pago exitoso! Revisa tu correo')
+        messages.success(request, '¡Pago exitoso!')
         return redirect('success', order_id=order.order_number)
         
     except Exception as e:

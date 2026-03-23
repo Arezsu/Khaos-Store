@@ -36,7 +36,7 @@ class UserProfile(models.Model):
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
     favorite_games = models.ManyToManyField(Product, blank=True)
-    birth_date = models.DateField(null=True, blank=True)  # <--- CAMPO IMPORTANTE
+    birth_date = models.DateField(null=True, blank=True)
     
     def __str__(self):
         return self.user.username
@@ -88,21 +88,21 @@ class Order(models.Model):
         try:
             subject = f'🎮 Confirmación de compra - KHAOS STORE #{self.order_number}'
             message = f"""
-            ¡Gracias por tu compra en KHAOS STORE!
-            
-            Datos de la compra:
-            • Número de orden: {self.order_number}
-            • Producto: {self.product.name}
-            • Total: ${self.total}
-            • Método de pago: {self.get_payment_method_display()}
-            
-            En los próximos minutos recibirás la key de tu juego.
-            
-            Si tienes alguna duda, contáctanos al 333 7452514 o a soporte@khaosstore.com
-            
-            ¡A jugar!
-            KHAOS STORE
-            """
+¡Gracias por tu compra en KHAOS STORE!
+
+Datos de la compra:
+• Número de orden: {self.order_number}
+• Producto: {self.product.name}
+• Total: ${self.total}
+• Método de pago: {self.get_payment_method_display()}
+
+En los próximos minutos recibirás la key de tu juego.
+
+Si tienes alguna duda, contáctanos al 333 7452514 o a soporte@khaosstore.com
+
+¡A jugar!
+KHAOS STORE
+"""
             send_mail(
                 subject,
                 message,
@@ -121,24 +121,24 @@ class Order(models.Model):
             game_key = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
             subject = f'🔑 Tu juego {self.product.name} ya está listo - KHAOS STORE'
             message = f"""
-            ¡Hola {self.customer_name}!
-            
-            Tu juego {self.product.name} ya está disponible.
-            
-            Tu clave de activación: {game_key}
-            
-            Instrucciones de activación:
-            1. Abre la plataforma correspondiente
-            2. Ve a "Canjear código"
-            3. Ingresa: {game_key}
-            4. ¡Disfruta tu juego!
-            
-            ¿Problemas? Contáctanos al 333 7452514
-            
-            Tu clave también está disponible en tu perfil.
-            
-            KHAOS STORE
-            """
+¡Hola {self.customer_name}!
+
+Tu juego {self.product.name} ya está disponible.
+
+Tu clave de activación: {game_key}
+
+Instrucciones de activación:
+1. Abre la plataforma correspondiente
+2. Ve a "Canjear código"
+3. Ingresa: {game_key}
+4. ¡Disfruta tu juego!
+
+¿Problemas? Contáctanos al 333 7452514
+
+Tu clave también está disponible en tu perfil.
+
+KHAOS STORE
+"""
             send_mail(
                 subject,
                 message,
