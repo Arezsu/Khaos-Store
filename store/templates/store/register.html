@@ -177,7 +177,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             z-index: 9999;
             justify-content: center;
             align-items: center;
@@ -189,8 +189,8 @@
         }
         
         .loading-spinner {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border: 5px solid #ff00ff;
             border-top: 5px solid #00ffff;
             border-radius: 50%;
@@ -205,40 +205,41 @@
         
         .loading-text {
             color: #fff;
-            font-size: 18px;
+            font-size: 20px;
             text-align: center;
+            margin-bottom: 20px;
         }
         
         .success-message {
             color: #00ff00;
-            font-size: 24px;
+            font-size: 28px;
             margin-bottom: 20px;
             text-align: center;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            font-weight: bold;
         }
         
         .countdown {
             color: #ff00ff;
-            font-size: 20px;
+            font-size: 48px;
+            font-weight: bold;
             margin-top: 20px;
-            text-align: center;
+        }
+        
+        .countdown-text {
+            color: #fff;
+            font-size: 18px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
+    <!-- Pantalla de carga -->
     <div class="loading-overlay" id="loading-overlay">
         <div class="loading-spinner"></div>
         <div class="loading-text" id="loading-text">Procesando registro...</div>
-        <div class="success-message" id="success-message">Usuario guardado correctamente</div>
-        <div class="countdown" id="countdown-container" style="display: none;">
-            Volviendo al inicio en <span id="timer">10</span> segundos...
-        </div>
+        <div class="success-message" id="success-message" style="display: none;">✅ USUARIO GUARDADO CORRECTAMENTE</div>
+        <div class="countdown" id="countdown-number" style="display: none;">10</div>
+        <div class="countdown-text" id="countdown-text" style="display: none;">Redirigiendo en <span id="timer">10</span> segundos...</div>
     </div>
 
     <div class="register-container">
@@ -254,7 +255,7 @@
         
         {% if request.GET.next %}
         <div class="info-message">
-            Regístrate para continuar tu compra
+            🔒 Regístrate para continuar tu compra
         </div>
         {% endif %}
         
@@ -273,7 +274,7 @@
             </div>
             
             <div class="form-group">
-                <label>TELEFONO (10 digitos)</label>
+                <label>TELÉFONO (10 dígitos)</label>
                 <input type="tel" name="phone" required maxlength="10" placeholder="3001234567">
             </div>
             
@@ -319,17 +320,17 @@
                 </select>
                 
                 <select name="birth_day" required id="birth-day">
-                    <option value="">DIA</option>
+                    <option value="">DÍA</option>
                 </select>
             </div>
             
             <div class="form-group">
-                <label>CONTRASENA (minimo 4 caracteres, solo letras y numeros)</label>
-                <input type="password" name="password" required minlength="4" pattern="[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]+" title="Solo letras (con tildes) y numeros, sin simbolos">
+                <label>CONTRASEÑA (mínimo 4 caracteres)</label>
+                <input type="password" name="password" required minlength="4">
             </div>
             
             <div class="form-group">
-                <label>CONFIRMAR CONTRASENA</label>
+                <label>CONFIRMAR CONTRASEÑA</label>
                 <input type="password" name="confirm_password" required>
             </div>
             
@@ -337,13 +338,14 @@
         </form>
         
         <div class="login-link">
-            ¿Ya tienes cuenta? <a href="{% url 'login' %}?next={{ request.GET.next }}">INICIAR SESION</a>
+            ¿Ya tienes cuenta? <a href="{% url 'login' %}?next={{ request.GET.next }}">INICIAR SESIÓN</a>
         </div>
         
         <a href="{% url 'home' %}" class="back-link">← VOLVER A LA TIENDA</a>
     </div>
     
     <script>
+        // Elementos
         const registroSound = document.getElementById('registro-sound');
         const loadingOverlay = document.getElementById('loading-overlay');
         const registerForm = document.getElementById('register-form');
@@ -352,13 +354,19 @@
         const daySelect = document.getElementById('birth-day');
         const loadingText = document.getElementById('loading-text');
         const successMessage = document.getElementById('success-message');
-        const countdownContainer = document.getElementById('countdown-container');
+        const countdownNumber = document.getElementById('countdown-number');
+        const countdownText = document.getElementById('countdown-text');
         const timerElement = document.getElementById('timer');
         
+        // Ocultar elementos de éxito inicialmente
         successMessage.style.display = 'none';
-        countdownContainer.style.display = 'none';
+        countdownNumber.style.display = 'none';
+        countdownText.style.display = 'none';
+        
+        // Configurar volumen
         registroSound.volume = 0.5;
         
+        // Reproducir sonido
         function playRegistroSound() {
             try {
                 registroSound.currentTime = 0;
@@ -368,12 +376,13 @@
             }
         }
         
+        // Actualizar días según mes y año
         function updateDays() {
             const year = parseInt(yearSelect.value);
             const month = parseInt(monthSelect.value);
             
             if (!month) {
-                daySelect.innerHTML = '<option value="">DIA</option>';
+                daySelect.innerHTML = '<option value="">DÍA</option>';
                 return;
             }
             
@@ -394,7 +403,7 @@
             }
             
             const currentDay = daySelect.value;
-            daySelect.innerHTML = '<option value="">DIA</option>';
+            daySelect.innerHTML = '<option value="">DÍA</option>';
             
             for (let i = 1; i <= maxDays; i++) {
                 const option = document.createElement('option');
@@ -412,10 +421,32 @@
         monthSelect.addEventListener('change', updateDays);
         updateDays();
         
+        // Validación de teléfono en tiempo real
         document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
         });
         
+        // Función para iniciar contador de 10 segundos
+        function startCountdown() {
+            let seconds = 10;
+            timerElement.textContent = seconds;
+            countdownNumber.textContent = seconds;
+            countdownNumber.style.display = 'block';
+            countdownText.style.display = 'block';
+            
+            const interval = setInterval(() => {
+                seconds--;
+                timerElement.textContent = seconds;
+                countdownNumber.textContent = seconds;
+                
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    window.location.href = "{% url 'home' %}";
+                }
+            }, 1000);
+        }
+        
+        // Manejo del envío del formulario
         registerForm.addEventListener('submit', function(e) {
             const username = document.querySelector('input[name="username"]').value.trim();
             const email = document.querySelector('input[name="email"]').value.trim();
@@ -433,19 +464,16 @@
                 errorMessage = 'El nombre de usuario es obligatorio';
                 isValid = false;
             } else if (!email || !email.includes('@')) {
-                errorMessage = 'Ingresa un email valido';
+                errorMessage = 'Ingresa un email válido';
                 isValid = false;
             } else if (phone.length !== 10) {
-                errorMessage = 'El telefono debe tener exactamente 10 digitos';
+                errorMessage = 'El teléfono debe tener exactamente 10 dígitos';
                 isValid = false;
             } else if (!year || !month || !day) {
                 errorMessage = 'Debes seleccionar fecha de nacimiento completa';
                 isValid = false;
             } else if (password.length < 4) {
                 errorMessage = 'La contraseña debe tener al menos 4 caracteres';
-                isValid = false;
-            } else if (!/^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]+$/.test(password)) {
-                errorMessage = 'La contraseña solo puede contener letras (con tildes) y numeros, sin simbolos';
                 isValid = false;
             } else if (password !== confirm) {
                 errorMessage = 'Las contraseñas no coinciden';
@@ -458,13 +486,20 @@
                 return;
             }
             
+            // Prevenir envío inmediato
             e.preventDefault();
             
+            // Reproducir sonido
+            playRegistroSound();
+            
+            // Mostrar overlay de carga
             loadingOverlay.classList.add('show');
             loadingText.textContent = 'Procesando registro...';
             successMessage.style.display = 'none';
-            countdownContainer.style.display = 'none';
+            countdownNumber.style.display = 'none';
+            countdownText.style.display = 'none';
             
+            // Enviar formulario con fetch
             fetch(registerForm.action || window.location.href, {
                 method: 'POST',
                 body: new FormData(registerForm),
@@ -475,25 +510,15 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    playRegistroSound();
-                    loadingText.textContent = data.message || 'Usuario guardado correctamente';
+                    // Registro exitoso
+                    loadingText.textContent = '✅ ¡REGISTRO EXITOSO!';
                     successMessage.style.display = 'block';
+                    successMessage.textContent = '✅ USUARIO GUARDADO CORRECTAMENTE';
                     
-                    let seconds = 10;
-                    timerElement.textContent = seconds;
-                    countdownContainer.style.display = 'block';
-                    
-                    const interval = setInterval(() => {
-                        seconds--;
-                        timerElement.textContent = seconds;
-                        
-                        if (seconds <= 0) {
-                            clearInterval(interval);
-                            window.location.href = "{% url 'home' %}";
-                        }
-                    }, 1000);
+                    // Iniciar contador de 10 segundos
+                    startCountdown();
                 } else {
-                    loadingText.textContent = 'Error: ' + (data.error || 'Error desconocido');
+                    loadingText.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
                     setTimeout(() => {
                         loadingOverlay.classList.remove('show');
                     }, 3000);
@@ -501,7 +526,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                loadingText.textContent = 'Error en el registro';
+                loadingText.textContent = '❌ Error en el registro';
                 setTimeout(() => {
                     loadingOverlay.classList.remove('show');
                 }, 3000);
