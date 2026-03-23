@@ -77,8 +77,8 @@ class ProductAdmin(admin.ModelAdmin):
 # ==================== ÓRDENES ====================
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    # Listado
-    list_display = ['order_number', 'customer_name', 'product', 'total_display', 'status_badge', 'payment_method', 'created_at']
+    # Listado - CORREGIDO: 'status' agregado para que list_editable funcione
+    list_display = ['order_number', 'customer_name', 'product', 'total_display', 'status', 'status_badge', 'payment_method', 'created_at']
     list_display_links = ['order_number', 'customer_name']
     list_filter = ['status', 'payment_method', 'created_at']
     search_fields = ['order_number', 'customer_name', 'customer_email', 'customer_phone']
