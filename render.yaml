@@ -17,10 +17,16 @@ services:
         value: 673698288254848
       - key: CLOUDINARY_API_SECRET
         value: wC0DfLplnYAIBEqrpe9maNE3i2Q
+      - key: EMAIL_HOST
+        value: smtp-relay.brevo.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
       - key: EMAIL_HOST_USER
-        value: soportekhaosstore@gmail.com
+        value: a5e3fc001@smtp-brevo.com
       - key: EMAIL_HOST_PASSWORD
-        value: zhdi hsev bqtt lnyg
+        value: fdfbd5fa1b8f2bbb1ed97185a1c037
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
