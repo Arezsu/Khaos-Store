@@ -6,10 +6,10 @@ from .models import Product, Order, UserProfile
 
 # ==================== FORMULARIO PERSONALIZADO PARA PRODUCTO ====================
 class ProductForm(forms.ModelForm):
-    image_url = forms.URLField(
-        label='URL de imagen (Cloudinary)',
-        required=False,
-        help_text='Pega aquí la URL de Cloudinary si ya la tienes. Si subes un archivo, este campo se ignora.'
+    image = forms.URLField(
+        label='URL de imagen',
+        required=True,
+        help_text='Pega aquí la URL de la imagen (ej: https://res.cloudinary.com/... o cualquier URL de imagen)'
     )
     
     class Meta:
@@ -19,23 +19,13 @@ class ProductForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.image:
-            self.fields['image_url'].initial = self.instance.image.url
-    
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        # Si se proporcionó una URL, usarla; si no, mantener el archivo subido
-        if self.cleaned_data.get('image_url'):
-            instance.image = self.cleaned_data['image_url']
-        if commit:
-            instance.save()
-            self.save_m2m()
-        return instance
+            self.fields['image'].initial = self.instance.image.url if hasattr(self.instance.image, 'url') else self.instance.image
 
 # ==================== PRODUCTOS ====================
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     form = ProductForm
-    list_display = ['id', 'name', 'price', 'stock', 'is_on_sale', 'created_at']
+    list_display = ['id', 'name', 'price', 'stock', 'is_on_sale', 'image_display', 'created_at']
     list_display_links = ['id', 'name']
     list_filter = ['is_on_sale', 'category', 'created_at']
     search_fields = ['name', 'description']
@@ -45,13 +35,20 @@ class ProductAdmin(admin.ModelAdmin):
     
     fieldsets = (
         (None, {
-            'fields': ('name', 'price', 'image', 'image_url', 'description', 'stock', 'is_on_sale', 'sale_price', 'category')
+            'fields': ('name', 'price', 'image', 'description', 'stock', 'is_on_sale', 'sale_price', 'category')
         }),
         ('Fechas', {
             'fields': ('created_at',),
             'classes': ('collapse',)
         }),
     )
+    
+    def image_display(self, obj):
+        if obj.image:
+            return f'<a href="{obj.image}" target="_blank">Ver imagen</a>'
+        return 'Sin imagen'
+    image_display.allow_tags = True
+    image_display.short_description = 'Imagen'
 
 # ==================== ÓRDENES ====================
 @admin.register(Order)

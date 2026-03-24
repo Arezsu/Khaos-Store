@@ -10,7 +10,7 @@ from datetime import date
 class Product(models.Model):
     name = models.CharField(max_length=200)
     price = models.FloatField(validators=[MinValueValidator(0)])
-    image = models.ImageField(upload_to='products/')
+    image = models.URLField(max_length=500, verbose_name='URL de imagen')  # Cambiado a URLField
     description = models.TextField()
     is_on_sale = models.BooleanField(default=False)
     sale_price = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0)])
@@ -25,6 +25,7 @@ class Product(models.Model):
     
     def get_price(self):
         return self.sale_price if self.is_on_sale else self.price
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
