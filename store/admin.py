@@ -2,11 +2,39 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
+from django import forms
 from .models import Product, Order, UserProfile
+
+# Formulario personalizado para Producto
+class ProductForm(forms.ModelForm):
+    image_url = forms.URLField(
+        label='URL de imagen (Cloudinary)',
+        required=False,
+        help_text='Pega aquí la URL de Cloudinary si ya la tienes'
+    )
+    
+    class Meta:
+        model = Product
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.image:
+            self.fields['image_url'].initial = self.instance.image.url
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.cleaned_data.get('image_url'):
+            instance.image = self.cleaned_data['image_url']
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 # ==================== PRODUCTOS ====================
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    form = ProductForm
     list_display = ['id', 'name', 'price', 'stock', 'is_on_sale', 'image_preview', 'created_at']
     list_display_links = ['id', 'name']
     list_filter = ['is_on_sale', 'category', 'created_at']
@@ -16,9 +44,18 @@ class ProductAdmin(admin.ModelAdmin):
     list_per_page = 25
     ordering = ['-created_at']
     
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'price', 'image', 'image_url', 'description', 'stock', 'is_on_sale', 'sale_price', 'category')
+        }),
+        ('Fechas', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
     def image_preview(self, obj):
-        """Muestra una miniatura de la imagen en el listado"""
-        if obj.image:
+        if obj.image and obj.image.url.startswith('http'):
             return format_html(
                 '<img src="{}" width="50" height="50" style="object-fit: cover; border-radius: 5px;" />',
                 obj.image.url
