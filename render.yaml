@@ -2,11 +2,8 @@ services:
   - type: web
     name: khaos-store
     runtime: python
-    buildCommand: |
-      pip install -r requirements.txt
-      python manage.py collectstatic --noinput
-      python manage.py migrate
-    startCommand: gunicorn khaos_store.wsgi:application --bind 0.0.0.0:10000
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+    startCommand: "gunicorn khaos_store.wsgi:application"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
