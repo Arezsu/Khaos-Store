@@ -109,11 +109,6 @@
         .login-link a {
             color: #00ffff;
             text-decoration: none;
-            transition: all 0.3s;
-        }
-        
-        .login-link a:hover {
-            text-shadow: 0 0 10px #00ffff;
         }
         
         .messages {
@@ -162,8 +157,6 @@
             margin-top: 20px;
             color: rgba(255, 255, 255, 0.5);
             text-decoration: none;
-            font-size: 14px;
-            transition: all 0.3s;
         }
         
         .back-link:hover {
@@ -345,7 +338,6 @@
     </div>
     
     <script>
-        // Elementos
         const registroSound = document.getElementById('registro-sound');
         const loadingOverlay = document.getElementById('loading-overlay');
         const registerForm = document.getElementById('register-form');
@@ -358,15 +350,11 @@
         const countdownText = document.getElementById('countdown-text');
         const timerElement = document.getElementById('timer');
         
-        // Ocultar elementos de éxito inicialmente
         successMessage.style.display = 'none';
         countdownNumber.style.display = 'none';
         countdownText.style.display = 'none';
-        
-        // Configurar volumen
         registroSound.volume = 0.5;
         
-        // Reproducir sonido
         function playRegistroSound() {
             try {
                 registroSound.currentTime = 0;
@@ -376,7 +364,6 @@
             }
         }
         
-        // Actualizar días según mes y año
         function updateDays() {
             const year = parseInt(yearSelect.value);
             const month = parseInt(monthSelect.value);
@@ -421,12 +408,10 @@
         monthSelect.addEventListener('change', updateDays);
         updateDays();
         
-        // Validación de teléfono en tiempo real
         document.querySelector('input[name="phone"]').addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '').slice(0, 10);
         });
         
-        // Función para iniciar contador de 10 segundos
         function startCountdown() {
             let seconds = 10;
             timerElement.textContent = seconds;
@@ -446,31 +431,16 @@
             }, 1000);
         }
         
-        // Manejo del envío del formulario
         registerForm.addEventListener('submit', function(e) {
-            const username = document.querySelector('input[name="username"]').value.trim();
-            const email = document.querySelector('input[name="email"]').value.trim();
             const phone = document.querySelector('input[name="phone"]').value;
             const password = document.querySelector('input[name="password"]').value;
             const confirm = document.querySelector('input[name="confirm_password"]').value;
-            const year = yearSelect.value;
-            const month = monthSelect.value;
-            const day = daySelect.value;
             
             let isValid = true;
             let errorMessage = '';
             
-            if (!username) {
-                errorMessage = 'El nombre de usuario es obligatorio';
-                isValid = false;
-            } else if (!email || !email.includes('@')) {
-                errorMessage = 'Ingresa un email válido';
-                isValid = false;
-            } else if (phone.length !== 10) {
+            if (phone.length !== 10) {
                 errorMessage = 'El teléfono debe tener exactamente 10 dígitos';
-                isValid = false;
-            } else if (!year || !month || !day) {
-                errorMessage = 'Debes seleccionar fecha de nacimiento completa';
                 isValid = false;
             } else if (password.length < 4) {
                 errorMessage = 'La contraseña debe tener al menos 4 caracteres';
@@ -486,51 +456,17 @@
                 return;
             }
             
-            // Prevenir envío inmediato
-            e.preventDefault();
-            
-            // Reproducir sonido
+            // Mostrar overlay y reproducir sonido
+            loadingOverlay.classList.add('show');
             playRegistroSound();
             
-            // Mostrar overlay de carga
-            loadingOverlay.classList.add('show');
-            loadingText.textContent = 'Procesando registro...';
-            successMessage.style.display = 'none';
-            countdownNumber.style.display = 'none';
-            countdownText.style.display = 'none';
+            // Iniciar contador de 10 segundos
+            startCountdown();
             
-            // Enviar formulario con fetch
-            fetch(registerForm.action || window.location.href, {
-                method: 'POST',
-                body: new FormData(registerForm),
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Registro exitoso
-                    loadingText.textContent = '✅ ¡REGISTRO EXITOSO!';
-                    successMessage.style.display = 'block';
-                    successMessage.textContent = '✅ USUARIO GUARDADO CORRECTAMENTE';
-                    
-                    // Iniciar contador de 10 segundos
-                    startCountdown();
-                } else {
-                    loadingText.textContent = '❌ Error: ' + (data.error || 'Error desconocido');
-                    setTimeout(() => {
-                        loadingOverlay.classList.remove('show');
-                    }, 3000);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                loadingText.textContent = '❌ Error en el registro';
-                setTimeout(() => {
-                    loadingOverlay.classList.remove('show');
-                }, 3000);
-            });
+            // Enviar el formulario después de 1 segundo para que se vea el overlay
+            setTimeout(() => {
+                registerForm.submit();
+            }, 1000);
         });
     </script>
 </body>
