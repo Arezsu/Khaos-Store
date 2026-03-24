@@ -3,9 +3,11 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 from .models import Product, Order, UserProfile
 from datetime import date
 import re
+import json
 
 def home(request):
     query = request.GET.get('q', '')
@@ -29,32 +31,35 @@ def register(request):
             
             # Validaciones
             if not username or not email or not password:
-                messages.error(request, 'Todos los campos son obligatorios')
-                return redirect('register')
+                return JsonResponse({'success': False, 'error': 'Todos los campos son obligatorios'}, status=400)
             
             if password != confirm_password:
-                messages.error(request, 'Las contraseñas no coinciden')
-                return redirect('register')
+                return JsonResponse({'success': False, 'error': 'Las contraseñas no coinciden'}, status=400)
             
             if len(password) < 4:
-                messages.error(request, 'La contraseña debe tener al menos 4 caracteres')
-                return redirect('register')
+                return JsonResponse({'success': False, 'error': 'La contraseña debe tener al menos 4 caracteres'}, status=400)
             
             if not re.match(r'^[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]+$', password):
-                messages.error(request, 'La contraseña solo puede contener letras y números')
-                return redirect('register')
+                return JsonResponse({'success': False, 'error': 'La contraseña solo puede contener letras y números'}, status=400)
             
             if User.objects.filter(username=username).exists():
-                messages.error(request, 'El usuario ya existe')
-                return redirect('register')
+                return JsonResponse({'success': False, 'error': 'El usuario ya existe'}, status=400)
             
             if User.objects.filter(email=email).exists():
-                messages.error(request, 'El email ya está registrado')
-                return redirect('register')
+                return JsonResponse({'success': False, 'error': 'El email ya está registrado'}, status=400)
             
             if len(phone) != 10 or not phone.isdigit():
-                messages.error(request, 'El teléfono debe tener 10 dígitos')
-                return redirect('register')
+                return JsonResponse({'success': False, 'error': 'El teléfono debe tener 10 dígitos'}, status=400)
+            
+            # Validar fecha
+            try:
+                birth_date = date(int(birth_year), int(birth_month), int(birth_day))
+                today = date.today()
+                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+                if age < 18:
+                    return JsonResponse({'success': False, 'error': 'Debes ser mayor de 18 años'}, status=400)
+            except:
+                return JsonResponse({'success': False, 'error': 'Fecha de nacimiento inválida'}, status=400)
             
             # Crear usuario
             user = User.objects.create_user(
@@ -63,34 +68,22 @@ def register(request):
                 password=password
             )
             
-            # Crear perfil con fecha de nacimiento
-            try:
-                birth_date = date(int(birth_year), int(birth_month), int(birth_day))
-                UserProfile.objects.create(
-                    user=user,
-                    phone=phone,
-                    birth_date=birth_date
-                )
-            except:
-                UserProfile.objects.create(
-                    user=user,
-                    phone=phone
-                )
+            # Crear perfil con fecha
+            UserProfile.objects.create(
+                user=user,
+                phone=phone,
+                birth_date=birth_date
+            )
             
             # Iniciar sesión automáticamente
             login(request, user)
             request.session.save()
             
-            # Mensaje de éxito
-            messages.success(request, '¡Registro exitoso! Bienvenido a KHAOS STORE')
-            
-            # Redirigir directamente a home
-            return redirect('home')
+            return JsonResponse({'success': True, 'redirect': '/'})
             
         except Exception as e:
             print(f"ERROR EN REGISTRO: {e}")
-            messages.error(request, 'Error en el registro. Por favor intenta de nuevo.')
-            return redirect('register')
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
     return render(request, 'store/register.html')
 
@@ -143,13 +136,12 @@ def process_payment(request, product_id):
         try:
             order.send_confirmation_email()
             order.send_game_key()
-        except Exception as e:
-            print(f"Error enviando emails: {e}")
+        except:
+            pass
         
         request.session['last_order'] = order.order_number
-        request.session.save()
         
-        messages.success(request, '¡Pago exitoso! Revisa tu correo')
+        messages.success(request, '¡Pago exitoso!')
         return redirect('success', order_id=order.order_number)
         
     except Exception as e:
