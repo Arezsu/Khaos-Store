@@ -148,22 +148,18 @@ def process_payment(request, product_id):
             status='PAID'
         )
         
-        # Enviar email de confirmación de pago
+        # Enviar email de confirmación de pago (usando email_utils)
         send_payment_confirmation(order)
         
+        # Restar stock
         product.stock -= 1
         product.save()
         
-        try:
-            order.send_confirmation_email()
-            order.send_game_key()
-        except:
-            pass
-        
+        # Guardar en sesión
         request.session['last_order'] = order.order_number
         request.session.save()
         
-        messages.success(request, 'Pago exitoso!')
+        messages.success(request, 'Pago exitoso! Revisa tu correo para la key del juego.')
         return redirect('success', order_id=order.order_number)
         
     except Exception as e:

@@ -93,10 +93,10 @@ def send_welcome_email(user):
         """
         
         send_mail(
-            subject,
-            '',
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
+            subject=subject,
+            message='',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
             html_message=html_body,
             fail_silently=False,
         )
@@ -208,10 +208,10 @@ def send_payment_confirmation(order):
         """
         
         send_mail(
-            subject,
-            '',
-            settings.DEFAULT_FROM_EMAIL,
-            [order.customer_email],
+            subject=subject,
+            message='',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[order.customer_email],
             html_message=html_body,
             fail_silently=False,
         )
